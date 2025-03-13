@@ -16,7 +16,7 @@ from torch.utils.data import DataLoader
 
 from ...src.models.utils import ModelType
 from ...src.pkg.wrappers import ViTHuggingFaceWrapper
-from ...src.utils.logging import (
+from ...src.utils.plotting import (
     visualize_mae,
     visualize_nearest_neighbors,
     visualize_self_attention,

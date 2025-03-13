@@ -1,7 +1,5 @@
 import gc
 import math
-import os
-import sys
 from typing import Optional, Tuple, Union
 
 import matplotlib.cm as cm
@@ -18,7 +16,6 @@ from sklearn.metrics import auc
 from torchvision import transforms
 
 from ..models.mae.utils import unpatch_images
-from ..utils.utils import is_main_process
 
 MEAN = torch.tensor([0.485, 0.456, 0.406]).cpu()
 STD = torch.tensor([0.229, 0.224, 0.225]).cpu()
