@@ -1,0 +1,10 @@
+tmp
+tmp/*
+profiler
+profiler/*
+profiler_env/*
+core
+*.bin
+*.gz
+.git
+.git/*
