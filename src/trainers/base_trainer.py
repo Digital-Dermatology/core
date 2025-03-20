@@ -16,12 +16,12 @@ from torch.utils.data import DataLoader
 
 from ...src.models.utils import ModelType
 from ...src.pkg.wrappers import ViTHuggingFaceWrapper
+from ...src.utils.metrics import calculate_embedding_entropy
 from ...src.utils.plotting import (
     visualize_mae,
     visualize_nearest_neighbors,
     visualize_self_attention,
 )
-from ...src.utils.metrics import calculate_embedding_entropy
 from ...src.utils.utils import (
     has_batchnorms,
     is_dist_avail_and_initialized,
