@@ -2,8 +2,11 @@ import json
 import os
 from enum import Enum
 
+import numpy as np
 import torch
+from PIL import Image
 from torch.utils.data import Dataset
+from torchvision import transforms
 from turbojpeg import TurboJPEG
 
 
@@ -80,10 +83,18 @@ class CocoCaptionDataset(Dataset):
 
     def load_image_turbo_jpeg(self, f):
         with open(f, "rb") as file:
-            image = self.jpeg_reader.decode(file.read())
+            try:
+                image = self.jpeg_reader.decode(file.read())
+            except OSError:
+                # fall back to PIL loading when there is a problem
+                # likely not a JPEG image
+                print(f"Failed to read file with TurboJPEG falling back on PIL: {f}")
+                image = Image.open(f)
+                image = image.convert("RGB")
+                image = np.array(image)
         if len(image.shape) == 2:
             image = image[...,]
-        return torch.Tensor(image).permute(2, 0, 1)
+        return transforms.ToTensor()(image).permute(2, 0, 1)
 
     @staticmethod
     def collate_fn(batch):
