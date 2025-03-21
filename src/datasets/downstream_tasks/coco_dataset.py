@@ -3,6 +3,7 @@ import os
 from enum import Enum
 
 import numpy as np
+import pandas as pd
 import torch
 from PIL import Image
 from torch.utils.data import Dataset
@@ -23,12 +24,14 @@ class CocoCaptionDataset(Dataset):
         image_dir: str,
         transform=None,
         tokenizer=None,
+        drop_duplicates: bool = True,
         loading_type: LoadingType = LoadingType.STANDARD,
     ):
         self.annotation_file = annotation_file
         self.image_dir = image_dir
         self.transform = transform
         self.tokenizer = tokenizer
+        self.drop_duplicates = drop_duplicates
         self.loading_type = loading_type
         self.index_samples()
         # create TurboJPEG object for image reading
@@ -39,7 +42,7 @@ class CocoCaptionDataset(Dataset):
             data = json.load(f)
 
         self.image_dict = {img["id"]: img["file_name"] for img in data["images"]}
-        self.samples = []
+        samples = []
         for ann in data["annotations"]:
             image_id = ann["image_id"]
             # Make sure the image exists in our mapping.
@@ -47,17 +50,26 @@ class CocoCaptionDataset(Dataset):
                 file_name = self.image_dict[image_id]
                 image_path = os.path.join(self.image_dir, file_name)
                 caption = ann["caption"]
-                self.samples.append((image_path, caption))
+                samples.append((image_path, caption))
+        self.df = pd.DataFrame(samples, columns=["image_path", "captions"])
+
+        if self.drop_duplicates:
+            self.df.drop_duplicates(subset="image_path", inplace=True)
+
         if self.tokenizer:
             self.tokens = self.tokenizer(
-                [x[1] for x in self.samples], padding="longest", return_tensors="pt"
+                [x[1] for x in samples],
+                padding="longest",
+                return_tensors="pt",
             )
+            if self.drop_duplicates:
+                self.tokens = {k: v[self.df.index] for (k, v) in self.tokens.items()}
 
     def __len__(self):
-        return len(self.samples)
+        return len(self.df)
 
     def __getitem__(self, idx: int):
-        image_path, caption = self.samples[idx]
+        image_path, caption = self.df.iloc[idx]
 
         if (
             self.loading_type == LoadingType.STANDARD
@@ -94,7 +106,7 @@ class CocoCaptionDataset(Dataset):
                 image = np.array(image)
         if len(image.shape) == 2:
             image = image[...,]
-        return transforms.ToTensor()(image).permute(2, 0, 1)
+        return transforms.ToTensor()(image)
 
     @staticmethod
     def collate_fn(batch):
