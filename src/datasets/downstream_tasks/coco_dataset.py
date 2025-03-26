@@ -55,6 +55,7 @@ class CocoCaptionDataset(Dataset):
 
         if self.drop_duplicates:
             self.df.drop_duplicates(subset="image_path", inplace=True)
+            self.df.reset_index(drop=True, inplace=True)
 
         if self.tokenizer:
             self.tokens = self.tokenizer(
@@ -75,7 +76,6 @@ class CocoCaptionDataset(Dataset):
             self.loading_type == LoadingType.STANDARD
             or self.loading_type == LoadingType.IMG_ONLY
         ):
-            # image = Image.open(image_path).convert('RGB')
             image = self.load_image_turbo_jpeg(image_path)
             if self.transform:
                 image = self.transform(image)
