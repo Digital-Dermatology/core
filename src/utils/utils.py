@@ -244,10 +244,10 @@ class EarlyStopping:
         elif self.best_loss - val_loss < self.min_delta:
             self.counter += 1
             if self.log_messages:
-                logger.info(f"Early stopping counter {self.counter} of {self.patience}")
+                logger.debug(f"Early stopping counter {self.counter} of {self.patience}")
             if self.counter >= self.patience:
                 if self.log_messages:
-                    logger.info("Early stopping")
+                    logger.info("EarlyStopping, evaluation did not decrease.")
                 self.early_stop = True
 
 
