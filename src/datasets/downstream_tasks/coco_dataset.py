@@ -53,7 +53,7 @@ class CocoCaptionDataset(Dataset):
 
         if self.tokenizer:
             self.tokens = self.tokenizer(
-                [x[1] for x in samples],
+                list(self.df["captions"].values),
                 padding="longest",
                 return_tensors="pt",
             )
