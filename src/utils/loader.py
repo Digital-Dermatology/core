@@ -15,3 +15,13 @@ class Loader(yaml.SafeLoader):
 
 
 Loader.add_constructor("!include", Loader.include)
+
+
+def merge_dicts(a, b):
+    """Recursively merge dict b into dict a."""
+    for key, value in b.items():
+        if key in a and isinstance(a[key], dict) and isinstance(value, dict):
+            merge_dicts(a[key], value)
+        else:
+            a[key] = value
+    return a
