@@ -20,7 +20,6 @@ class Flickr30kDataset(Dataset):
         split="train",
         transform=None,
         tokenizer=None,
-        drop_duplicates: bool = True,
         loading_type: LoadingType = LoadingType.STANDARD,
     ):
         self.root_dir = root_dir
@@ -28,7 +27,6 @@ class Flickr30kDataset(Dataset):
         self.split = split
         self.transform = transform
         self.tokenizer = tokenizer
-        self.drop_duplicates = drop_duplicates
         self.loading_type = loading_type
         self.index_samples()
         # create TurboJPEG object for image reading
@@ -50,11 +48,6 @@ class Flickr30kDataset(Dataset):
             lambda x: os.path.join(self.root_dir, "flickr30k_images", x)
         )
         self.df = self.df.merge(df_split, on="image_name", how="left")
-
-        if self.drop_duplicates:
-            self.df.drop_duplicates(subset="image_path", inplace=True)
-            self.df.reset_index(drop=True, inplace=True)
-
         self.df = self.df[self.df["split"] == self.split]
         self.df.reset_index(drop=True, inplace=True)
 
@@ -64,8 +57,6 @@ class Flickr30kDataset(Dataset):
                 padding="longest",
                 return_tensors="pt",
             )
-            if self.drop_duplicates:
-                self.tokens = {k: v[self.df.index] for (k, v) in self.tokens.items()}
 
     def __len__(self):
         return len(self.df)

@@ -24,14 +24,12 @@ class CocoCaptionDataset(Dataset):
         image_dir: str,
         transform=None,
         tokenizer=None,
-        drop_duplicates: bool = True,
         loading_type: LoadingType = LoadingType.STANDARD,
     ):
         self.annotation_file = annotation_file
         self.image_dir = image_dir
         self.transform = transform
         self.tokenizer = tokenizer
-        self.drop_duplicates = drop_duplicates
         self.loading_type = loading_type
         self.index_samples()
         # create TurboJPEG object for image reading
@@ -53,18 +51,12 @@ class CocoCaptionDataset(Dataset):
                 samples.append((image_path, caption))
         self.df = pd.DataFrame(samples, columns=["image_path", "captions"])
 
-        if self.drop_duplicates:
-            self.df.drop_duplicates(subset="image_path", inplace=True)
-            self.df.reset_index(drop=True, inplace=True)
-
         if self.tokenizer:
             self.tokens = self.tokenizer(
                 [x[1] for x in samples],
                 padding="longest",
                 return_tensors="pt",
             )
-            if self.drop_duplicates:
-                self.tokens = {k: v[self.df.index] for (k, v) in self.tokens.items()}
 
     def __len__(self):
         return len(self.df)
