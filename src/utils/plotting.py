@@ -598,10 +598,9 @@ def embedding_plot(
 ):
     # Subsample image embeddings if more than X samples (stratified by class)
     if y is not None and X.shape[0] > max_samples:
-        if debug:
-            logger.debug(
-                f"Image embeddings exceed 10k samples: {X.shape[0]}. Subsampling..."
-            )
+        logger.debug(
+            f"Image embeddings exceed {max_samples} samples: {X.shape[0]}. Subsampling..."
+        )
         unique_labels, counts = np.unique(y, return_counts=True)
         total_samples = X.shape[0]
         subsampled_indices = []
@@ -619,6 +618,14 @@ def embedding_plot(
         subsampled_indices = np.array(subsampled_indices)
         X = X[subsampled_indices]
         y = y[subsampled_indices]
+    elif X.shape[0] > max_samples:
+        logger.debug(
+            f"Image embeddings exceed {max_samples} samples: {X.shape[0]}. Subsampling..."
+        )
+        indices = np.random.choice(
+            np.arange(X.shape[0]), size=max_samples, replace=False
+        )
+        X = X[indices]
 
     if X.shape[0] > 2:
         # apply TSNE if the dimension is larger than 2
@@ -687,10 +694,9 @@ def embedding_plot_w_markers(
 ):
     # Subsample image embeddings if more than X samples (stratified by class)
     if y is not None and X.shape[0] > max_samples:
-        if debug:
-            logger.debug(
-                f"Image embeddings exceed 10k samples: {X.shape[0]}. Subsampling..."
-            )
+        logger.debug(
+            f"Image embeddings exceed {max_samples} samples: {X.shape[0]}. Subsampling..."
+        )
         unique_labels, counts = np.unique(y, return_counts=True)
         total_samples = X.shape[0]
         subsampled_indices = []
@@ -708,6 +714,14 @@ def embedding_plot_w_markers(
         subsampled_indices = np.array(subsampled_indices)
         X = X[subsampled_indices]
         y = y[subsampled_indices]
+    elif X.shape[0] > max_samples:
+        logger.debug(
+            f"Image embeddings exceed {max_samples} samples: {X.shape[0]}. Subsampling..."
+        )
+        indices = np.random.choice(
+            np.arange(X.shape[0]), size=max_samples, replace=False
+        )
+        X = X[indices]
 
     if X.shape[0] > 2:
         # apply TSNE if the dimension is larger than 2
