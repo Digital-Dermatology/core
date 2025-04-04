@@ -593,13 +593,13 @@ def embedding_plot(
     figsize: Tuple[int, int] = (10, 5),
     save_path: Optional[str] = None,
     return_figure: bool = False,
-    max_samples: int = 10_000,
+    max_samples: int = 5_000,
     debug: bool = False,
 ):
     # Subsample image embeddings if more than X samples (stratified by class)
     if y is not None and X.shape[0] > max_samples:
         logger.debug(
-            f"Image embeddings exceed {max_samples} samples: {X.shape[0]}. Subsampling..."
+            f"Embeddings exceed {max_samples} samples: {X.shape[0]}. Subsampling..."
         )
         unique_labels, counts = np.unique(y, return_counts=True)
         total_samples = X.shape[0]
@@ -620,7 +620,7 @@ def embedding_plot(
         y = y[subsampled_indices]
     elif X.shape[0] > max_samples:
         logger.debug(
-            f"Image embeddings exceed {max_samples} samples: {X.shape[0]}. Subsampling..."
+            f"Embeddings exceed {max_samples} samples: {X.shape[0]}. Subsampling..."
         )
         indices = np.random.choice(
             np.arange(X.shape[0]), size=max_samples, replace=False
@@ -689,13 +689,13 @@ def embedding_plot_w_markers(
     text_y: np.ndarray = None,
     text_marker: str = "^",
     text_legend_label: str = "Text",
-    max_samples: int = 10_000,
+    max_samples: int = 5_000,
     debug: bool = False,
 ):
     # Subsample image embeddings if more than X samples (stratified by class)
     if y is not None and X.shape[0] > max_samples:
         logger.debug(
-            f"Image embeddings exceed {max_samples} samples: {X.shape[0]}. Subsampling..."
+            f"Embeddings exceed {max_samples} samples: {X.shape[0]}. Subsampling..."
         )
         unique_labels, counts = np.unique(y, return_counts=True)
         total_samples = X.shape[0]
@@ -716,7 +716,7 @@ def embedding_plot_w_markers(
         y = y[subsampled_indices]
     elif X.shape[0] > max_samples:
         logger.debug(
-            f"Image embeddings exceed {max_samples} samples: {X.shape[0]}. Subsampling..."
+            f"Embeddings exceed {max_samples} samples: {X.shape[0]}. Subsampling..."
         )
         indices = np.random.choice(
             np.arange(X.shape[0]), size=max_samples, replace=False
