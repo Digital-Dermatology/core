@@ -31,11 +31,7 @@ class CocoCaptionDataset(Dataset):
         self.transform = transform
         self.tokenizer = tokenizer
         self.loading_type = loading_type
-        self.index_samples()
-        # create TurboJPEG object for image reading
-        self.jpeg_reader = TurboJPEG()
 
-    def index_samples(self) -> None:
         with open(self.annotation_file, "r") as f:
             data = json.load(f)
 
@@ -50,7 +46,12 @@ class CocoCaptionDataset(Dataset):
                 caption = ann["caption"]
                 samples.append((image_path, caption))
         self.df = pd.DataFrame(samples, columns=["image_path", "captions"])
+        self.apply_tokenizer()
 
+        # create TurboJPEG object for image reading
+        self.jpeg_reader = TurboJPEG()
+
+    def apply_tokenizer(self) -> None:
         if self.tokenizer:
             self.tokens = self.tokenizer(
                 list(self.df["captions"].values),

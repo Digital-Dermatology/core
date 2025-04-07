@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -17,7 +18,7 @@ class Flickr30kDataset(Dataset):
         self,
         root_dir,
         meta_path,
-        split="train",
+        split: Optional[str] = "train",
         transform=None,
         tokenizer=None,
         loading_type: LoadingType = LoadingType.STANDARD,
@@ -28,11 +29,7 @@ class Flickr30kDataset(Dataset):
         self.transform = transform
         self.tokenizer = tokenizer
         self.loading_type = loading_type
-        self.index_samples()
-        # create TurboJPEG object for image reading
-        self.jpeg_reader = TurboJPEG()
 
-    def index_samples(self):
         self.df = pd.read_csv(self.meta_path, delimiter="|")
         self.df.columns = [x.strip() for x in self.df.columns]
 
@@ -48,12 +45,19 @@ class Flickr30kDataset(Dataset):
             lambda x: os.path.join(self.root_dir, "flickr30k_images", x)
         )
         self.df = self.df.merge(df_split, on="image_name", how="left")
-        self.df = self.df[self.df["split"] == self.split]
-        self.df.reset_index(drop=True, inplace=True)
+        # select the correct dataset
+        if self.split is not None:
+            self.df = self.df[self.df["split"] == self.split]
+            self.df.reset_index(drop=True, inplace=True)
+        self.apply_tokenizer()
 
+        # create TurboJPEG object for image reading
+        self.jpeg_reader = TurboJPEG()
+
+    def apply_tokenizer(self):
         if self.tokenizer:
             self.tokens = self.tokenizer(
-                list(self.df.comment.values),
+                list(self.df["comment"].values),
                 padding="longest",
                 return_tensors="pt",
             )
