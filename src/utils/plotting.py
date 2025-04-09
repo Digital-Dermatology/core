@@ -629,7 +629,7 @@ def embedding_plot(
 
     if X.shape[0] > 2:
         # apply if the dimension is larger than 2
-        umap_transformer = umap.UMAP(n_components=2, random_state=42, n_jobs=1)
+        umap_transformer = umap.UMAP(n_components=2, n_neighbors=100, random_state=42, n_jobs=1)
         X = umap_transformer.fit_transform(X)
     x_min, x_max = np.min(X, axis=0), np.max(X, axis=0)
     X = (X - x_min) / (x_max - x_min)
@@ -718,7 +718,7 @@ def embedding_plot_w_markers(
         # apply if the dimension is larger than 2
         if text_X is not None:
             X = np.concatenate([text_X, X])
-        umap_transformer = umap.UMAP(n_components=2, random_state=42, n_jobs=1)
+        umap_transformer = umap.UMAP(n_components=2, n_neighbors=100, random_state=42, n_jobs=1)
         X = umap_transformer.fit_transform(X)
     x_min, x_max = np.min(X, axis=0), np.max(X, axis=0)
     X = (X - x_min) / (x_max - x_min)
