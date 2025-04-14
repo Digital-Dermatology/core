@@ -17,7 +17,7 @@ from matplotlib.gridspec import SubplotSpec
 from sklearn.metrics import auc
 from torchvision import transforms
 
-warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 from ..models.mae.utils import unpatch_images
 

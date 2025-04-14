@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -18,7 +18,7 @@ class Flickr30kDataset(Dataset):
         self,
         root_dir,
         meta_path,
-        split: Optional[str] = "train",
+        split: Optional[Union[str, List[str]]] = "train",
         transform=None,
         tokenizer=None,
         loading_type: LoadingType = LoadingType.STANDARD,
@@ -45,9 +45,13 @@ class Flickr30kDataset(Dataset):
             lambda x: os.path.join(self.root_dir, "flickr30k_images", x)
         )
         self.df = self.df.merge(df_split, on="image_name", how="left")
+        self.df.dropna(subset="comment", inplace=True)
         # select the correct dataset
         if self.split is not None:
-            self.df = self.df[self.df["split"] == self.split]
+            if type(self.split) is str:
+                self.df = self.df[self.df["split"] == self.split]
+            else:
+                self.df = self.df[self.df["split"].isin(self.split)]
             self.df.reset_index(drop=True, inplace=True)
         self.apply_tokenizer()
 

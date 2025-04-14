@@ -46,6 +46,7 @@ class CocoCaptionDataset(Dataset):
                 caption = ann["caption"]
                 samples.append((image_path, caption))
         self.df = pd.DataFrame(samples, columns=["image_path", "captions"])
+        self.df.dropna(subset="captions", inplace=True)
         self.apply_tokenizer()
 
         # create TurboJPEG object for image reading
