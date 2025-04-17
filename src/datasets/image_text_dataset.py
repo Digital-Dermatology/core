@@ -25,6 +25,7 @@ class ImageTextDataset(Dataset):
         self.label_templates = label_templates
         self.template_key = template_key
         self.tokenizer = tokenizer
+        self.name = type(self.dataset).__name__
 
         check_templates = all(
             [
@@ -51,10 +52,6 @@ class ImageTextDataset(Dataset):
                 padding="longest",
                 return_tensors="pt",
             )
-
-    @property
-    def name(self):
-        return type(self.dataset).__name__
 
     @property
     def transform(self):
