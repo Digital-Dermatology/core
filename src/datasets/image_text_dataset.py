@@ -39,9 +39,9 @@ class ImageTextDataset(Dataset):
             )
 
         # create a data structure for the labels
-        l_captions = []
-        for idx in tqdm(range(len(self)), desc="Precomputing captions"):
-            l_captions.append(self.__getitem__(index=idx)[-1])
+        l_captions = [
+            self[i][-1] for i in tqdm(range(len(self)), desc="Precomputing captions")
+        ]
         self.df = pd.DataFrame(l_captions, columns=["captions"])
         self.apply_tokenizer()
 
@@ -71,6 +71,8 @@ class ImageTextDataset(Dataset):
             return image, caption
         else:
             label = self.dataset.classes[label]
+            if "," in label:
+                label = random.choice(label.split(",")).strip()
             template = random.choice(self.label_templates)
             label_text = template.format(**{self.template_key: label}).lower().strip()
             return image, label_text
