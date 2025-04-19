@@ -4,6 +4,7 @@ from typing import List, Tuple, Union
 
 import pandas as pd
 import torch
+from loguru import logger
 from PIL import Image
 from torch.utils.data import Dataset
 from tqdm import tqdm
@@ -19,6 +20,7 @@ class ImageTextDataset(Dataset):
         label_templates: List[str],
         template_key: str = "label",
         tokenizer=None,
+        precompute_captions: bool = True,
     ):
         super().__init__()
         self.dataset = dataset
@@ -39,9 +41,16 @@ class ImageTextDataset(Dataset):
             )
 
         # create a data structure for the labels
-        l_captions = [
-            self[i][-1] for i in tqdm(range(len(self)), desc="Precomputing captions")
-        ]
+        if precompute_captions:
+            l_captions = [
+                self[i][-1]
+                for i in tqdm(range(len(self)), desc="Precomputing captions")
+            ]
+        else:
+            l_captions = []
+            logger.warning(
+                "Not precomputing captions, only use when you KNOW you have the embeddings."
+            )
         self.df = pd.DataFrame(l_captions, columns=["captions"])
         self.apply_tokenizer()
 
