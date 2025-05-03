@@ -97,7 +97,10 @@ class ImageTextDataset(Dataset):
     @staticmethod
     def collate_fn(batch):
         images, captions = zip(*batch)
-        images = torch.stack(images, dim=0)
+        if isinstance(images[0], Image.Image):
+            images = list(images)
+        else:
+            images = torch.stack(images, dim=0)
         if isinstance(captions[0], dict):
             # Batch tokenized captions: each caption is a dict (e.g., input_ids, attention_mask).
             # We assume that all captions have the same keys.

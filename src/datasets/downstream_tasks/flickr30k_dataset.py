@@ -108,18 +108,3 @@ class Flickr30kDataset(Dataset):
         if len(image.shape) == 2:
             image = image[...,]
         return transforms.ToTensor()(image)
-
-    @staticmethod
-    def collate_fn(batch):
-        images, captions = zip(*batch)
-        images = torch.stack(images, dim=0)
-        if isinstance(captions[0], dict):
-            # Batch tokenized captions: each caption is a dict (e.g., input_ids, attention_mask).
-            # We assume that all captions have the same keys.
-            batch_captions = {
-                key: torch.stack([caption[key] for caption in captions], dim=0)
-                for key in captions[0]
-            }
-        else:
-            batch_captions = torch.stack(captions, dim=0)
-        return images, batch_captions
