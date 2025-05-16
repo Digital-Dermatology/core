@@ -1,5 +1,6 @@
 import gc
 import math
+import warnings
 from typing import Optional, Tuple, Union
 
 import matplotlib.cm as cm
@@ -15,6 +16,8 @@ from loguru import logger
 from matplotlib.gridspec import SubplotSpec
 from sklearn.metrics import auc
 from torchvision import transforms
+
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 from ..models.mae.utils import unpatch_images
 

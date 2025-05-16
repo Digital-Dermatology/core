@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -18,7 +18,7 @@ class Flickr30kDataset(Dataset):
         self,
         root_dir,
         meta_path,
-        split: Optional[str] = "train",
+        split: Optional[Union[str, List[str]]] = "train",
         transform=None,
         tokenizer=None,
         loading_type: LoadingType = LoadingType.STANDARD,
@@ -45,9 +45,13 @@ class Flickr30kDataset(Dataset):
             lambda x: os.path.join(self.root_dir, "flickr30k_images", x)
         )
         self.df = self.df.merge(df_split, on="image_name", how="left")
+        self.df.dropna(subset="comment", inplace=True)
         # select the correct dataset
         if self.split is not None:
-            self.df = self.df[self.df["split"] == self.split]
+            if type(self.split) is str:
+                self.df = self.df[self.df["split"] == self.split]
+            else:
+                self.df = self.df[self.df["split"].isin(self.split)]
             self.df.reset_index(drop=True, inplace=True)
         self.apply_tokenizer()
 
@@ -104,18 +108,3 @@ class Flickr30kDataset(Dataset):
         if len(image.shape) == 2:
             image = image[...,]
         return transforms.ToTensor()(image)
-
-    @staticmethod
-    def collate_fn(batch):
-        images, captions = zip(*batch)
-        images = torch.stack(images, dim=0)
-        if isinstance(captions[0], dict):
-            # Batch tokenized captions: each caption is a dict (e.g., input_ids, attention_mask).
-            # We assume that all captions have the same keys.
-            batch_captions = {
-                key: torch.stack([caption[key] for caption in captions], dim=0)
-                for key in captions[0]
-            }
-        else:
-            batch_captions = torch.stack(captions, dim=0)
-        return images, batch_captions
