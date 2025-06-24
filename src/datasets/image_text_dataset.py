@@ -1,3 +1,4 @@
+import inspect
 import random
 import string
 from typing import List, Tuple, Union
@@ -56,11 +57,15 @@ class ImageTextDataset(Dataset):
 
     def apply_tokenizer(self) -> None:
         if self.tokenizer:
-            self.tokens = self.tokenizer(
-                list(self.df["captions"].values),
-                padding="longest",
-                return_tensors="pt",
-            )
+            arguments = inspect.getfullargspec(self.tokenizer).args
+            if "padding" in arguments and "return_tensors" in arguments:
+                self.tokens = self.tokenizer(
+                    list(self.df["captions"].values),
+                    padding="longest",
+                    return_tensors="pt",
+                )
+            else:
+                self.tokens = self.tokenizer(list(self.df["captions"].values))
 
     @property
     def transform(self):
@@ -76,7 +81,10 @@ class ImageTextDataset(Dataset):
     def __getitem__(self, index: int) -> Tuple[Image.Image, Union[str, dict]]:
         image, label = self.dataset.__getitem__(index=index)
         if self.tokenizer:
-            caption = {k: v[index] for (k, v) in self.tokens.items()}
+            if type(self.tokens) is torch.Tensor:
+                caption = self.tokens[index]
+            else:
+                caption = {k: v[index] for (k, v) in self.tokens.items()}
             return image, caption
         else:
             label = self.dataset.classes[label]

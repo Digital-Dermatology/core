@@ -63,7 +63,7 @@ class ViTHuggingFaceWrapper(Wrapper):
         **kwargs
     ):
         kwargs = {}
-        if "interpolate_pos_encoding" in inspect.getargspec(self.model).args:
+        if "interpolate_pos_encoding" in inspect.getfullargspec(self.model).args:
             # makes sure that all input resolutions are allowed
             kwargs["interpolate_pos_encoding"] = True
         if self.n_layers is not None:
