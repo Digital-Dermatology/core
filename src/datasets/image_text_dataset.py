@@ -88,8 +88,6 @@ class ImageTextDataset(Dataset):
             return image, caption
         else:
             label = self.dataset.classes[label]
-            if "," in label:
-                label = random.choice(label.split(",")).strip()
             template = random.choice(self.label_templates)
             label_text = template.format(**{self.template_key: label}).lower().strip()
             return image, label_text
