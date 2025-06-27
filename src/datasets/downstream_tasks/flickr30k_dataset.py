@@ -1,3 +1,4 @@
+import inspect
 import os
 from typing import List, Optional, Union
 
@@ -58,13 +59,17 @@ class Flickr30kDataset(Dataset):
         # create TurboJPEG object for image reading
         self.jpeg_reader = TurboJPEG()
 
-    def apply_tokenizer(self):
+    def apply_tokenizer(self) -> None:
         if self.tokenizer:
-            self.tokens = self.tokenizer(
-                list(self.df["comment"].values),
-                padding="longest",
-                return_tensors="pt",
-            )
+            arguments = inspect.getfullargspec(self.tokenizer).args
+            if "padding" in arguments and "return_tensors" in arguments:
+                self.tokens = self.tokenizer(
+                    list(self.df["captions"].values),
+                    padding="longest",
+                    return_tensors="pt",
+                )
+            else:
+                self.tokens = self.tokenizer(list(self.df["captions"].values))
 
     def __len__(self):
         return len(self.df)
@@ -88,7 +93,10 @@ class Flickr30kDataset(Dataset):
             or self.loading_type == LoadingType.TXT_ONLY
         ):
             if self.tokenizer:
-                caption = {k: v[idx] for (k, v) in self.tokens.items()}
+                if type(self.tokens) is torch.Tensor:
+                    caption = self.tokens[idx]
+                else:
+                    caption = {k: v[idx] for (k, v) in self.tokens.items()}
         else:
             caption = torch.Tensor(0)
 
