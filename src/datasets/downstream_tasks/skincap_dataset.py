@@ -11,27 +11,18 @@ from PIL import Image
 from ....src.datasets.base_dataset import BaseDataset
 
 
-class DDILabel(Enum):
-    # col name of label code, col name of label
-    DISEASE = "lbl_disease", "disease"
-    MALIGNANT = "lbl_malignant", "malignant"
+class SkinCapDataset(BaseDataset):
+    """SkinCap dataset."""
 
-
-class DDIDataset(BaseDataset):
-    """Diverse Dermatology Images (DDI) dataset."""
-
-    IMG_COL = "DDI_file"
-    LBL_COL = None
+    IMG_COL = "skincap_file_path"
 
     def __init__(
         self,
-        csv_file: Union[str, Path] = "data/DDI/ddi_metadata.csv",
-        dataset_dir: Union[str, Path] = "data/DDI/images",
+        csv_file: Union[str, Path] = "data/SkinCap/ddi_metadata.csv",
+        dataset_dir: Union[str, Path] = "data/SkinCap/images",
         transform=None,
         val_transform=None,
-        label_col: DDILabel = DDILabel.MALIGNANT,
         return_path: bool = False,
-        data_quality_issues_list: Optional[Union[str, Path]] = None,
         **kwargs,
     ):
         """
@@ -63,37 +54,20 @@ class DDIDataset(BaseDataset):
         # transform the dataframe for better loading
         imageid_path_dict = {
             os.path.basename(x): x
-            for x in glob(os.path.join(self.dataset_dir, "", "*.png"))
+            for x in glob(os.path.join(self.dataset_dir, "*", "*.png"))
         }
         # load the metadata
         self.meta_data = pd.DataFrame(pd.read_csv(csv_file, index_col=0))
         self.meta_data["path"] = self.meta_data[self.IMG_COL].map(imageid_path_dict.get)
-        self.meta_data["malignant"] = self.meta_data["malignant"].astype(str)
 
-        self.meta_data[DDILabel.DISEASE.value[0]] = pd.factorize(
-            self.meta_data[DDILabel.DISEASE.value[1]]
-        )[0]
-        self.meta_data[DDILabel.MALIGNANT.value[0]] = (
-            self.meta_data[DDILabel.MALIGNANT.value[1]] == "True"
-        ).astype(int)
-
-        self.meta_data["description"] = self.meta_data.apply(
-            lambda row: f"This clinical image shows a {row['disease']} \
-for a patient with fitzpatrick skin type {str(int(row['skin_tone']))[0]} or {str(int(row['skin_tone']))[1]} \
-obtained through biopsy.",
-            axis=1,
-        )
-
-        # remove data quality issues if file is given
-        self.remove_data_quality_issues(data_quality_issues_list)
-        self.meta_data.reset_index(drop=True, inplace=True)
+        self.meta_data["description"] = self.meta_data['caption_zh_polish_en']
 
         # global configs
         self.return_path = return_path
-        self.IMG_COL = "path"
-        self.LBL_COL = label_col.value[0]
-        self.classes = self.meta_data[label_col.value[1]].unique().tolist()
-        self.n_classes = len(self.classes)
+        self.IMG_COL = 'path'
+        self.LBL_COL = 'description'
+        self.classes = None
+        self.n_classes = None
 
     def __len__(self):
         return len(self.meta_data)
@@ -110,8 +84,8 @@ obtained through biopsy.",
         elif self.val_transform and not self.training:
             image = self.val_transform(image)
 
-        diagnosis = self.meta_data.loc[self.meta_data.index[idx], self.LBL_COL]
+        description = self.meta_data.loc[self.meta_data.index[idx], self.LBL_COL]
         if self.return_path:
-            return image, img_name, int(diagnosis)
+            return image, img_name, description
         else:
-            return image, int(diagnosis)
+            return image, description

@@ -23,6 +23,7 @@ class GenericImageDataset(BaseDataset):
         val_transform=None,
         return_path: bool = False,
         image_extensions: Sequence = ("*.png", "*.jpg", "*.JPEG"),
+        caption_template: str = "This image shows the skin condition",
         **kwargs,
     ):
         """
@@ -67,6 +68,10 @@ class GenericImageDataset(BaseDataset):
         )
         self.meta_data[self.LBL_COL] = self.meta_data[self.IMG_COL].apply(
             lambda x: Path(x).parents[0].name
+        )
+        self.meta_data["description"] = self.meta_data.apply(
+            lambda row: f"{caption_template} {row[self.LBL_COL]}.",
+            axis=1,
         )
         self.meta_data.reset_index(drop=True, inplace=True)
         int_lbl, lbl_mapping = pd.factorize(self.meta_data[self.LBL_COL])

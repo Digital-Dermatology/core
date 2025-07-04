@@ -119,6 +119,20 @@ class PASSIONDataset(GenericImageDataset):
         self.LBL_COL = f"lbl_{self.LBL_COL}"
         self.meta_data[self.LBL_COL] = int_lbl
 
+        # create the description
+        self.meta_data["description"] = self.meta_data.apply(
+            lambda row: f"This clinical image shows a {row['diagnosis'].strip()} \
+{'on the ' + ','.join([x for x in row['body_loc'] if x != 'none']) if len([x for x in row['body_loc'] if x != 'none']) > 0 else ''} \
+{'for a ' + row['sex'].replace('m', 'male').replace('f', 'female') + ' patient' if str(row['sex']) != 'nan' else ''} \
+{'with ' + row['fitzpatrick'] if str(row['fitzpatrick']) != 'nan' else ''} \
+{'of age ' + str(int(row['age'])) if str(row['age']) != 'nan' else ''} \
+{'from ' + row['country'] if str(row['country']) != 'nan' else ''}.",
+            axis=1,
+        )
+        self.meta_data["description"] = self.meta_data.apply(
+            lambda row: " ".join(row["description"].split()), axis=1
+        )
+
         self.return_path = return_path
         self.return_embedding = return_embedding
         self.classes = list(lbl_mapping)

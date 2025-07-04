@@ -61,6 +61,9 @@ class SD128Dataset(GenericImageDataset):
         meta_data["lbl_diagnosis"] = pd.factorize(meta_data["diagnosis"])[0]
         meta_data.reset_index(drop=True, inplace=True)
         self.meta_data = meta_data
+        self.meta_data["description"] = self.meta_data["description"].str.replace(
+            "_", " "
+        )
 
         # remove data quality issues if file is given
         self.remove_data_quality_issues(data_quality_issues_list)

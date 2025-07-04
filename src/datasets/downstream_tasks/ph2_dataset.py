@@ -71,6 +71,11 @@ class PH2Dataset(GenericImageDataset):
         self.meta_data = df_meta
         del df_meta
 
+        self.meta_data["description"] = self.meta_data.apply(
+            lambda row: f"This dermoscopic image shows a {row['diagnosis']}.",
+            axis=1,
+        )
+
         # remove data quality issues if file is given
         self.remove_data_quality_issues(data_quality_issues_list)
         self.meta_data.reset_index(drop=True, inplace=True)

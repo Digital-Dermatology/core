@@ -107,6 +107,14 @@ class Fitzpatrick17kDataset(BaseDataset):
             self.meta_data = self.meta_data[self.meta_data["qc"].notna()]
         self.meta_data.reset_index(drop=True, inplace=True)
 
+        # create description
+        self.meta_data["description"] = self.meta_data.apply(
+            lambda row: f"This image shows the skin condition \
+            {row['granular_partition_label']}, {row['nine_partition_label']}, {row['three_partition_label']} \
+            for an individual with fitzpatrick skin type {row['fitzpatrick']}.",
+            axis=1,
+        )
+
         # global configs
         self.return_fitzpatrick = return_fitzpatrick
         self.return_path = return_path

@@ -14,6 +14,7 @@ from ...src.datasets.downstream_tasks.chest_xray_covid_dataset import (
 from ...src.datasets.downstream_tasks.chexpert_dataset import CheXpertDataset
 from ...src.datasets.downstream_tasks.ddi_dataset import DDIDataset
 from ...src.datasets.downstream_tasks.derm7pt_dataset import Derm7ptDataset
+from ...src.datasets.downstream_tasks.derma_compass_dataset import DermaCompassDataset
 from ...src.datasets.downstream_tasks.fitzpatrick17_dataset import Fitzpatrick17kDataset
 from ...src.datasets.downstream_tasks.food101_dataset import Food101Dataset
 from ...src.datasets.downstream_tasks.ham10000_dataset import HAM10000Dataset
@@ -28,7 +29,9 @@ from ...src.datasets.downstream_tasks.pad_ufes_20_dataset import PADUFES20Datase
 from ...src.datasets.downstream_tasks.passion_dataset import PASSIONDataset
 from ...src.datasets.downstream_tasks.pcam_dataset import PatchCamelyonDataset
 from ...src.datasets.downstream_tasks.ph2_dataset import PH2Dataset
+from ...src.datasets.downstream_tasks.scin_dataset import SCINDataset
 from ...src.datasets.downstream_tasks.sd_128_dataset import SD128Dataset
+from ...src.datasets.downstream_tasks.skincap_dataset import SkinCapDataset
 from ...src.datasets.downstream_tasks.stl_dataset import STL10Dataset
 from ...src.datasets.downstream_tasks.vindr_bodypart_xr import VinDrBodyPartXRDataset
 from ...src.datasets.encrypted_image_dataset import EncryptedImageDataset
@@ -40,13 +43,16 @@ class DatasetName(Enum):
     PH2 = "PH2"
     DDI = "DDI"
     DERM7PT = "Derm7pt"
-    PAD_UFES_20 = "pad_ufes_20"
-    SD_128 = "SD-128"
-    HAM10000 = "ham10000"
-    FITZPATRICK17K = "fitzpatrick17k"
+    PAD_UFES_20 = "PAD_UFES_20"
+    SD_128 = "SD128"
+    HAM10000 = "HAM10000"
+    FITZPATRICK17K = "Fitzpatrick17k"
     ISIC_2019 = "ISIC_2019"
     ISIC_2024 = "ISIC_2024"
-    PASSION = "passion"
+    PASSION = "PASSION"
+    DERMACOMPASS = "DermaCompass"
+    SKINCAP = "SkinCap"
+    SCIN = "SCIN"
 
     CHEXPERT = "CheXpert"
     CHEST_XRAY_COVID = "Chest_Xray_COVID"
@@ -54,10 +60,10 @@ class DatasetName(Enum):
     CELEB_A = "CelebA"
     PCAM = "PatchCamelyon"
 
-    IMAGENET_1K = "ImageNet-1k"
-    FOOD_101 = "FOOD_101"
+    IMAGENET_1K = "ImageNet1k"
+    FOOD_101 = "FOOD101"
     FLOWER_102 = "OxfordFlower102"
-    STL_10 = "STL_10"
+    STL_10 = "STL10"
     CIFAR10 = "CIFAR10"
     CIFAR10H = "CIFAR10H"
 
@@ -130,6 +136,34 @@ def get_dataset(
         dataset = PASSIONDataset(
             dataset_dir=dataset_path,
             meta_data_file="PASSION_traininready.csv",
+            transform=transform,
+            return_path=True,
+            **kwargs,
+        )
+    elif dataset_name == DatasetName.DERMACOMPASS:
+        dataset_path = dataset_path / "DermaCompass/"
+        csv_path = dataset_path / "data.csv"
+        dataset = DermaCompassDataset(
+            csv_path,
+            dataset_path,
+            transform=transform,
+            return_path=True,
+            **kwargs,
+        )
+    elif dataset_name == DatasetName.SKINCAP:
+        dataset_path = dataset_path / "SkinCAP/"
+        csv_path = dataset_path / "skincap_v240623.csv"
+        dataset = SkinCapDataset(
+            csv_path,
+            dataset_path,
+            transform=transform,
+            return_path=True,
+            **kwargs,
+        )
+    elif dataset_name == DatasetName.SCIN:
+        dataset_path = dataset_path / "scin/dataset/"
+        dataset = SCINDataset(
+            dataset_path,
             transform=transform,
             return_path=True,
             **kwargs,

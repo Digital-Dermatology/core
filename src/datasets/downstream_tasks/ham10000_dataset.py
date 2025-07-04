@@ -58,7 +58,7 @@ class HAM10000Dataset(BaseDataset):
         lesion_type_dict = {
             "nv": "Melanocytic nevi",
             "mel": "dermatofibroma",
-            "bkl": "Benign keratosis-like lesions ",
+            "bkl": "Benign keratosis-like lesions",
             "bcc": "Basal cell carcinoma",
             "akiec": "Actinic keratoses",
             "vasc": "Vascular lesions",
@@ -80,7 +80,19 @@ class HAM10000Dataset(BaseDataset):
         self.meta_data.dropna(subset=["path"], inplace=True)
         self.meta_data.reset_index(drop=True, inplace=True)
         self.LBL_COL = "cell_type_idx"
+
+        # create the description
+        self.meta_data["description"] = self.meta_data.apply(
+            lambda row: f"This dermoscopic image shows a close up {row['cell_type']} \
+{'on the ' + row['localization'] if str(row['localization']) != 'nan' else ''} \
+{'for a ' + row['sex'] + ' patient' if str(row['sex']) != 'nan' else ''} \
+{'of age ' + str(int(row['age'])) if str(row['age']) != 'nan' else ''} \
+{'obtained through ' + row['dx_type'].replace('histo', 'biopsy') if str(row['dx_type']) != 'nan' else ''}.",
+            axis=1,
+        )
+
         # global configs
+        self.IMG_COL = "path"
         self.return_path = return_path
         self.classes = list(lbl_mapping)
         self.n_classes = len(self.classes)
@@ -92,7 +104,7 @@ class HAM10000Dataset(BaseDataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        img_name = self.meta_data.loc[self.meta_data.index[idx], "path"]
+        img_name = self.meta_data.loc[self.meta_data.index[idx], self.IMG_COL]
         image = Image.open(img_name)
         image = image.convert("RGB")
         if self.transform and self.training:
