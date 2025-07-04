@@ -21,6 +21,7 @@ from ...src.datasets.downstream_tasks.ham10000_dataset import HAM10000Dataset
 from ...src.datasets.downstream_tasks.imagenet_1k_dataset import ImageNet1kDataset
 from ...src.datasets.downstream_tasks.isic_2019_dataset import ISIC2019Dataset
 from ...src.datasets.downstream_tasks.isic_2024_dataset import ISIC2024Dataset
+from ...src.datasets.downstream_tasks.isic_dataset import ISICDataset
 from ...src.datasets.downstream_tasks.med_node_dataset import MedNodeDataset
 from ...src.datasets.downstream_tasks.oxford_flowers102_dataset import (
     OxfordFlower102Dataset,
@@ -53,6 +54,7 @@ class DatasetName(Enum):
     DERMACOMPASS = "DermaCompass"
     SKINCAP = "SkinCap"
     SCIN = "SCIN"
+    ISIC = "ISIC"
 
     CHEXPERT = "CheXpert"
     CHEST_XRAY_COVID = "Chest_Xray_COVID"
@@ -171,6 +173,14 @@ def get_dataset(
     elif dataset_name == DatasetName.ISIC_2019:
         dataset_path = dataset_path / "ISIC_2019/"
         dataset = ISIC2019Dataset(
+            dataset_path,
+            transform=transform,
+            return_path=True,
+            **kwargs,
+        )
+    elif dataset_name == DatasetName.ISIC:
+        dataset_path = dataset_path / "ISIC/"
+        dataset = ISICDataset(
             dataset_path,
             transform=transform,
             return_path=True,

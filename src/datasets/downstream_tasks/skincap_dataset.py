@@ -60,12 +60,12 @@ class SkinCapDataset(BaseDataset):
         self.meta_data = pd.DataFrame(pd.read_csv(csv_file, index_col=0))
         self.meta_data["path"] = self.meta_data[self.IMG_COL].map(imageid_path_dict.get)
 
-        self.meta_data["description"] = self.meta_data['caption_zh_polish_en']
+        self.meta_data["description"] = self.meta_data["caption_zh_polish_en"]
 
         # global configs
         self.return_path = return_path
-        self.IMG_COL = 'path'
-        self.LBL_COL = 'description'
+        self.IMG_COL = "path"
+        self.LBL_COL = "description"
         self.classes = None
         self.n_classes = None
 

@@ -84,10 +84,12 @@ class DermaCompassDataset(BaseDataset):
             self.meta_data[DermaCompassLabel.SECONDARY.value[1]]
         )[0]
         # create the description
-        self.meta_data["description"] = self.meta_data.apply(DermaCompassDataset.make_description, axis=1)
+        self.meta_data["description"] = self.meta_data.apply(
+            DermaCompassDataset.make_description, axis=1
+        )
         # global configs
         self.return_path = return_path
-        self.IMG_COL = 'path'
+        self.IMG_COL = "path"
         self.LBL_COL = label_col.value[0]
         self.classes = self.meta_data[label_col.value[1]].unique().tolist()
         self.n_classes = len(self.classes)
@@ -150,7 +152,7 @@ class DermaCompassDataset(BaseDataset):
 
         # 3) Distribution & arrangement
         dist = row.get("distribution")
-        arr  = row.get("arrangement")
+        arr = row.get("arrangement")
         area = row.get("areas")
         dist_clause = []
         if pd.notna(dist):
@@ -170,13 +172,13 @@ class DermaCompassDataset(BaseDataset):
 
         # 5) Morphology features
         feats = []
-        for col,label in [
-            ("demarcation","well-defined borders"),
-            ("configuration","configuration"),
-            ("colour","colouration"),
-            ("surface","surface texture"),
-            ("consistency","consistency"),
-            ("structure","structure")
+        for col, label in [
+            ("demarcation", "well-defined borders"),
+            ("configuration", "configuration"),
+            ("colour", "colouration"),
+            ("surface", "surface texture"),
+            ("consistency", "consistency"),
+            ("structure", "structure"),
         ]:
             val = row.get(col)
             if pd.notna(val):
@@ -187,7 +189,7 @@ class DermaCompassDataset(BaseDataset):
 
         # 6) Primary & secondary changes
         prim = row.get("primary")
-        sec  = row.get("secondary")
+        sec = row.get("secondary")
         if pd.notna(prim):
             txt = f"Primary features include {prim}"
             if pd.notna(sec):
@@ -196,4 +198,3 @@ class DermaCompassDataset(BaseDataset):
 
         # Combine all non-empty parts into one paragraph
         return ". ".join(p.rstrip(".") for p in parts) + "."
-
