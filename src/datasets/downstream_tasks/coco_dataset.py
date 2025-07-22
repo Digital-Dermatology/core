@@ -1,12 +1,20 @@
+import copy
 import inspect
 import json
 import os
+import random
 from enum import Enum
+from typing import Optional
 
+import cv2
+import numpy as np
 import pandas as pd
 import torch
 from PIL import Image
+from pycocotools.coco import COCO
 from torch.utils.data import Dataset
+from torchvision import transforms
+from torchvision.transforms import InterpolationMode
 from turbojpeg import TurboJPEG
 
 
@@ -24,10 +32,12 @@ class CocoCaptionDataset(Dataset):
         transform=None,
         tokenizer=None,
         loading_type: LoadingType = LoadingType.STANDARD,
+        instances_file: Optional[str] = None,
     ):
         self.annotation_file = annotation_file
         self.image_dir = image_dir
         self.transform = transform
+        self.mask_transform = make_mask_transform(transform)
         self.tokenizer = tokenizer
         self.loading_type = loading_type
 
@@ -43,9 +53,20 @@ class CocoCaptionDataset(Dataset):
                 file_name = self.image_dict[image_id]
                 image_path = os.path.join(self.image_dir, file_name)
                 caption = ann["caption"]
-                samples.append((image_path, caption))
-        self.df = pd.DataFrame(samples, columns=["image_path", "captions"])
+                samples.append((image_id, image_path, caption))
+        self.df = pd.DataFrame(samples, columns=["image_id", "image_path", "captions"])
         self.df.dropna(subset="captions", inplace=True)
+
+        # COCO annotations (i.e., bounding boxes)
+        self.coco_captions = COCO(annotation_file)
+        self.coco_instances = None
+        if instances_file:
+            self.coco_instances = COCO(instances_file)
+            # select only the valid samples, because the others have no annotations
+            valid_samples = list(self.coco_instances.imgToAnns.keys())
+            self.df = self.df[self.df["image_id"].isin(valid_samples)]
+
+        # this optimizes the loading afterwards
         self.apply_tokenizer()
 
         try:
@@ -71,7 +92,7 @@ class CocoCaptionDataset(Dataset):
         return len(self.df)
 
     def __getitem__(self, idx: int):
-        image_path, caption = self.df.iloc[idx]
+        _, image_path, caption = self.df.iloc[idx]
 
         if (
             self.loading_type == LoadingType.STANDARD
@@ -118,3 +139,143 @@ class CocoCaptionDataset(Dataset):
     def load_image_PIL(self, f):
         image = Image.open(f)
         return image
+
+    def get_batch_image_masks_and_instructions(self, indices: list):
+        l_masks = []
+        for idx in indices:
+            l_masks.append(self.get_single_random_task(idx=idx))
+
+        task_ids = torch.Tensor([x[0] for x in l_masks]).int()
+        instructions = [x[1] for x in l_masks]
+        masks = torch.stack([x[2] for x in l_masks]).unsqueeze(1).float()
+        captions = [x[3] for x in l_masks]
+
+        # tokenize the captions
+        if self.tokenizer is not None:
+            captions = self.tokenizer(captions)
+
+        return task_ids, instructions, masks, captions
+
+    def get_single_random_task(self, idx: int, print_captions: bool = False):
+        """
+        Generates a single random task and its corresponding mask and caption for a given index.
+        This is designed to be called from __getitem__.
+        """
+        if self.coco_captions is None or self.coco_instances is None:
+            raise ValueError("Caption and instance metadata not available.")
+
+        # --- 1. Get image and instance info (same as before) ---
+        img_id = self.df.iloc[idx].image_id
+        img_info = self.coco_captions.loadImgs([img_id])[0]
+        height, width = img_info["height"], img_info["width"]
+        ann_ids = self.coco_instances.getAnnIds(imgIds=[img_id], iscrowd=None)
+        anns = self.coco_instances.loadAnns(ann_ids)
+        if not anns:
+            # Return a dummy task if no annotations are found
+            dummy_mask = np.ones((height, width), dtype=np.uint8)
+            return 0, "no objects", self.mask_transform(dummy_mask), "no objects"
+
+        # Print image captions
+        if print_captions:
+            cap_ids = self.coco_captions.getAnnIds(imgIds=[img_id])
+            caps = self.coco_captions.loadAnns(cap_ids)
+            captions = [cap["caption"] for cap in caps]
+            print(f"Image {img_id} captions:")
+            for idx, text in enumerate(captions, 1):
+                print(f"  {idx}. {text}")
+
+        # --- 2. Select a random task ID ---
+        task_id = random.randint(0, 3)
+
+        # --- 3. Generate only the required caption and mask ---
+        central_ann = get_central_instance(anns, width, height)
+        central_cat = central_ann["category_id"]
+        central_cat_name = self.coco_instances.cats[central_cat]["name"]
+        caption_central = f"this image shows a {central_cat_name}"
+
+        mask_union = union_masks(self.coco_instances, anns, height, width)
+        instance_cat_names = list(
+            set([self.coco_instances.cats[x["category_id"]]["name"] for x in anns])
+        )
+        caption_objects = f'this image shows {", ".join(instance_cat_names)}'
+
+        # --- 4. Return data based on the chosen task_id ---
+        if task_id == 0:
+            mask = np.full_like(mask_union, 1)  # Dummy mask
+            return (
+                task_id,
+                "focus on the central object",
+                self.mask_transform(mask),
+                caption_central,
+            )
+        elif task_id == 1:
+            central_anns = [ann for ann in anns if ann["category_id"] == central_cat]
+            mask = union_masks(self.coco_instances, central_anns, height, width)
+            return (
+                task_id,
+                "focus on the entire region of the central object",
+                self.mask_transform(mask),
+                caption_central,
+            )
+        else:  # Task IDs 2 and 3 use the same mask and caption
+            return (
+                task_id,
+                "focus on all objects",
+                self.mask_transform(mask_union),
+                caption_objects,
+            )
+
+
+def get_central_instance(anns, img_width, img_height):
+    """Select the annotation whose bounding-box centroid is closest to the image center."""
+    # TODO: I think this should not be the "center" but just the biggest?
+    cx, cy = img_width / 2, img_height / 2
+    best, best_dist = None, float("inf")
+    for ann in anns:
+        x, y, w, h = ann["bbox"]
+        cent_x, cent_y = x + w / 2, y + h / 2
+        dist = (cent_x - cx) ** 2 + (cent_y - cy) ** 2
+        if dist < best_dist:
+            best_dist, best = dist, ann
+    return best
+
+
+def union_masks(coco, anns, height, width):
+    """Union all instance masks in anns into a single binary mask."""
+    mask_union = np.zeros((height, width), dtype=np.uint8)
+    for ann in anns:
+        mask_union = np.logical_or(mask_union, coco.annToMask(ann)).astype(np.uint8)
+    return mask_union
+
+
+def make_mask_transform(image_transform: transforms.Compose) -> transforms.Compose:
+    mask_transforms = [transforms.Lambda(lambda pic: Image.fromarray(pic))]
+    for t in image_transform.transforms:
+        # deep‐copy so we don’t clobber the original
+        t_mask = copy.deepcopy(t)
+
+        # if it’s a resize, force nearest‐neighbor
+        if isinstance(t_mask, transforms.Resize):
+            t_mask.interpolation = InterpolationMode.NEAREST
+
+        # if it’s a CenterCrop (or any crop) it has no interpolation
+        # but we still want the same size arg
+        elif isinstance(t_mask, transforms.CenterCrop):
+            # nothing to change here
+            pass
+
+        # ToTensor on masks will normalize to [0,1] float – you probably
+        # want integer labels instead, so convert differently:
+        elif isinstance(t_mask, transforms.ToTensor):
+            # replace with a lambda that just turns your PIL mask into LongTensor
+            t_mask = transforms.Lambda(
+                lambda pic: torch.from_numpy(np.array(pic, dtype=np.int64))
+            )
+
+        # drop any color/brightness etc transforms:
+        else:
+            continue
+
+        mask_transforms.append(t_mask)
+
+    return transforms.Compose(mask_transforms)

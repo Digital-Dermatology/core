@@ -56,8 +56,12 @@ class Flickr30kDataset(Dataset):
             self.df.reset_index(drop=True, inplace=True)
         self.apply_tokenizer()
 
-        # create TurboJPEG object for image reading
-        self.jpeg_reader = TurboJPEG()
+        try:
+            # create TurboJPEG object for (fast) image reading
+            self.jpeg_reader = TurboJPEG()
+        except RuntimeError as e:
+            self.jpeg_reader = None
+            print(f"Failed to create TurboJPEG object falling back on PIL: {e}")
 
     def apply_tokenizer(self) -> None:
         if self.tokenizer:
@@ -103,16 +107,23 @@ class Flickr30kDataset(Dataset):
         return image, caption
 
     def load_image_turbo_jpeg(self, f):
-        with open(f, "rb") as file:
-            try:
-                image = self.jpeg_reader.decode(file.read())
-            except OSError:
-                # fall back to PIL loading when there is a problem
-                # likely not a JPEG image
-                print(f"Failed to read file with TurboJPEG falling back on PIL: {f}")
-                image = Image.open(f)
-                image = image.convert("RGB")
-                image = np.array(image)
-        if len(image.shape) == 2:
-            image = image[...,]
-        return transforms.ToTensor()(image)
+        if self.jpeg_reader is None:
+            image = self.load_image_PIL(f=f)
+        else:
+            with open(f, "rb") as file:
+                try:
+                    image = self.jpeg_reader.decode(file.read())
+                    image = Image.fromarray(image)
+                except OSError:
+                    # fall back to PIL loading when there is a problem
+                    # likely not a JPEG image
+                    print(
+                        f"Failed to read file with TurboJPEG falling back on PIL: {f}"
+                    )
+                    image = self.load_image_PIL(f=f)
+        image = image.convert("RGB")
+        return image
+
+    def load_image_PIL(self, f):
+        image = Image.open(f)
+        return image
