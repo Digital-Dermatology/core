@@ -40,6 +40,7 @@ class CocoCaptionDataset(Dataset):
         self.mask_transform = make_mask_transform(transform)
         self.tokenizer = tokenizer
         self.loading_type = loading_type
+        self.num_tasks = 4
 
         with open(self.annotation_file, "r") as f:
             data = json.load(f)
@@ -143,7 +144,7 @@ class CocoCaptionDataset(Dataset):
     def get_batch_image_masks_and_instructions(self, indices: list):
         l_masks = []
         for idx in indices:
-            l_masks.append(self.get_single_random_task(idx=idx))
+            l_masks.append(self.get_single_task(idx=idx))
 
         task_ids = torch.Tensor([x[0] for x in l_masks]).int()
         instructions = [x[1] for x in l_masks]
@@ -156,7 +157,24 @@ class CocoCaptionDataset(Dataset):
 
         return task_ids, instructions, masks, captions
 
-    def get_single_random_task(self, idx: int, print_captions: bool = False):
+    def get_all_tasks(self, idx: int, print_captions: bool = False):
+        all_tasks = []
+        for task_id in range(self.num_tasks):
+            all_tasks.append(
+                self.get_single_task(
+                    idx=idx,
+                    print_captions=print_captions,
+                    task_id=task_id,
+                )
+            )
+        return all_tasks
+
+    def get_single_task(
+        self,
+        idx: int,
+        print_captions: bool = False,
+        task_id: Optional[int] = None,
+    ):
         """
         Generates a single random task and its corresponding mask and caption for a given index.
         This is designed to be called from __getitem__.
@@ -164,18 +182,17 @@ class CocoCaptionDataset(Dataset):
         if self.coco_captions is None or self.coco_instances is None:
             raise ValueError("Caption and instance metadata not available.")
 
-        # --- 1. Get image and instance info (same as before) ---
+        # get image and instance info
         img_id = self.df.iloc[idx].image_id
         img_info = self.coco_captions.loadImgs([img_id])[0]
         height, width = img_info["height"], img_info["width"]
         ann_ids = self.coco_instances.getAnnIds(imgIds=[img_id], iscrowd=None)
-        anns = self.coco_instances.loadAnns(ann_ids)
-        if not anns:
-            # Return a dummy task if no annotations are found
+        annotations = self.coco_instances.loadAnns(ann_ids)
+        if not annotations:
+            # return a dummy task if no annotations are found
             dummy_mask = np.ones((height, width), dtype=np.uint8)
             return 0, "no objects", self.mask_transform(dummy_mask), "no objects"
 
-        # Print image captions
         if print_captions:
             cap_ids = self.coco_captions.getAnnIds(imgIds=[img_id])
             caps = self.coco_captions.loadAnns(cap_ids)
@@ -184,22 +201,27 @@ class CocoCaptionDataset(Dataset):
             for idx, text in enumerate(captions, 1):
                 print(f"  {idx}. {text}")
 
-        # --- 2. Select a random task ID ---
-        task_id = random.randint(0, 3)
+        # select random task if none is provided
+        if task_id is None:
+            task_id = random.randint(0, self.num_tasks - 1)
 
-        # --- 3. Generate only the required caption and mask ---
-        central_ann = get_central_instance(anns, width, height)
-        central_cat = central_ann["category_id"]
-        central_cat_name = self.coco_instances.cats[central_cat]["name"]
-        caption_central = f"this image shows a {central_cat_name}"
+        # generate only the required caption and mask
+        central_annotation = get_central_instance(annotations, width, height)
+        central_category = central_annotation["category_id"]
+        central_category_name = self.coco_instances.cats[central_category]["name"]
+        caption_central = f"this image shows a {central_category_name}"
 
-        mask_union = union_masks(self.coco_instances, anns, height, width)
+        mask_union = union_masks(self.coco_instances, annotations, height, width)
         instance_cat_names = list(
-            set([self.coco_instances.cats[x["category_id"]]["name"] for x in anns])
+            set(
+                [
+                    self.coco_instances.cats[x["category_id"]]["name"]
+                    for x in annotations
+                ]
+            )
         )
         caption_objects = f'this image shows {", ".join(instance_cat_names)}'
 
-        # --- 4. Return data based on the chosen task_id ---
         if task_id == 0:
             mask = np.full_like(mask_union, 1)  # Dummy mask
             return (
@@ -209,7 +231,9 @@ class CocoCaptionDataset(Dataset):
                 caption_central,
             )
         elif task_id == 1:
-            central_anns = [ann for ann in anns if ann["category_id"] == central_cat]
+            central_anns = [
+                ann for ann in annotations if ann["category_id"] == central_category
+            ]
             mask = union_masks(self.coco_instances, central_anns, height, width)
             return (
                 task_id,
@@ -217,13 +241,23 @@ class CocoCaptionDataset(Dataset):
                 self.mask_transform(mask),
                 caption_central,
             )
-        else:  # Task IDs 2 and 3 use the same mask and caption
+        elif task_id == 2:
             return (
                 task_id,
-                "focus on all objects",
+                "focus on the entire region of all objects",
                 self.mask_transform(mask_union),
                 caption_objects,
             )
+        elif task_id == 3:
+            return (
+                task_id,
+                "Separate foreground objects from background",
+                self.mask_transform(mask_union),
+                caption_objects,
+            )
+
+        else:
+            raise ValueError(f"Unknown task ID: {task_id}")
 
 
 def get_central_instance(anns, img_width, img_height):
