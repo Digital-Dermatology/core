@@ -206,24 +206,14 @@ class CocoCaptionDataset(Dataset):
             task_id = random.randint(0, self.num_tasks - 1)
 
         # generate only the required caption and mask
-        central_annotation = get_central_instance(annotations, width, height)
-        central_category = central_annotation["category_id"]
-        central_category_name = self.coco_instances.cats[central_category]["name"]
-        caption_central = f"this image shows a {central_category_name}"
-
-        mask_union = union_masks(self.coco_instances, annotations, height, width)
-        instance_cat_names = list(
-            set(
-                [
-                    self.coco_instances.cats[x["category_id"]]["name"]
-                    for x in annotations
-                ]
-            )
-        )
-        caption_objects = f'this image shows {", ".join(instance_cat_names)}'
-
         if task_id == 0:
-            mask = np.full_like(mask_union, 1)  # Dummy mask
+            # caption
+            central_annotation = get_central_instance(annotations, width, height)
+            central_category = central_annotation["category_id"]
+            central_category_name = self.coco_instances.cats[central_category]["name"]
+            caption_central = f"this image shows a {central_category_name}"
+            # "all 1's" mask
+            mask = np.ones((height, width), dtype=np.uint8)
             return (
                 task_id,
                 "focus on the central object",
@@ -231,10 +221,16 @@ class CocoCaptionDataset(Dataset):
                 caption_central,
             )
         elif task_id == 1:
-            central_anns = [
+            # caption
+            central_annotation = get_central_instance(annotations, width, height)
+            central_category = central_annotation["category_id"]
+            central_category_name = self.coco_instances.cats[central_category]["name"]
+            caption_central = f"this image shows a {central_category_name}"
+            # mask showing only the central object
+            central_annotations = [
                 ann for ann in annotations if ann["category_id"] == central_category
             ]
-            mask = union_masks(self.coco_instances, central_anns, height, width)
+            mask = union_masks(self.coco_instances, central_annotations, height, width)
             return (
                 task_id,
                 "focus on the entire region of the central object",
@@ -242,6 +238,18 @@ class CocoCaptionDataset(Dataset):
                 caption_central,
             )
         elif task_id == 2:
+            # caption
+            instance_cat_names = list(
+                set(
+                    [
+                        self.coco_instances.cats[x["category_id"]]["name"]
+                        for x in annotations
+                    ]
+                )
+            )
+            caption_objects = f'this image shows {", ".join(instance_cat_names)}'
+            # mask showing all objects in the image
+            mask_union = union_masks(self.coco_instances, annotations, height, width)
             return (
                 task_id,
                 "focus on the entire region of all objects",
@@ -249,6 +257,18 @@ class CocoCaptionDataset(Dataset):
                 caption_objects,
             )
         elif task_id == 3:
+            # caption
+            instance_cat_names = list(
+                set(
+                    [
+                        self.coco_instances.cats[x["category_id"]]["name"]
+                        for x in annotations
+                    ]
+                )
+            )
+            caption_objects = f'this image shows {", ".join(instance_cat_names)}'
+            # mask showing all objects in the image
+            mask_union = union_masks(self.coco_instances, annotations, height, width)
             return (
                 task_id,
                 "Separate foreground objects from background",
