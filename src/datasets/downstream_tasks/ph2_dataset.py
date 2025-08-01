@@ -75,6 +75,11 @@ class PH2Dataset(GenericImageDataset):
             lambda row: f"This dermoscopic image shows a {row['diagnosis']}.",
             axis=1,
         )
+        self.meta_data = self.meta_data.rename(
+            columns={
+                "diagnosis": "condition",
+            },
+        )
 
         # remove data quality issues if file is given
         self.remove_data_quality_issues(data_quality_issues_list)

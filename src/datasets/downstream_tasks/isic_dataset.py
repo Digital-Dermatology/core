@@ -53,7 +53,7 @@ class ISICDataset(GenericImageDataset):
             right_on="isic_id",
             how="outer",
         )
-        self.meta_data = self.meta_data[self.meta_data['img_path'].notna()]
+        self.meta_data = self.meta_data[self.meta_data["img_path"].notna()]
         self.meta_data.reset_index(drop=True, inplace=True)
 
         int_lbl, lbl_mapping = pd.factorize(self.meta_data["diagnosis_1"])
@@ -63,40 +63,61 @@ class ISICDataset(GenericImageDataset):
             parts = []
 
             # Basic info: sex and age
-            sex = row.get('sex') if pd.notna(row.get('sex')) else 'patient'
-            age = row.get('age_approx')
+            sex = row.get("sex") if pd.notna(row.get("sex")) else "patient"
+            age = row.get("age_approx")
             age_text = f"{int(age)} years old" if pd.notna(age) else "age unknown"
             parts.append(f"A {sex} patient, approximately {age_text},")
 
             # Anatomical site
-            site = row.get('anatom_site_general') if pd.notna(row.get('anatom_site_general')) else 'unknown site'
+            site = (
+                row.get("anatom_site_general")
+                if pd.notna(row.get("anatom_site_general"))
+                else "unknown site"
+            )
             parts.append(f"presents with a lesion on the {site}.")
 
             # Confirmation type, only if provided
-            confirm = row.get('diagnosis_confirm_type')
+            confirm = row.get("diagnosis_confirm_type")
             if pd.notna(confirm):
                 parts.append(f"Confirmed via {confirm}.")
 
             # Concomitant biopsy note
-            if row.get('concomitant_biopsy'):
+            if row.get("concomitant_biopsy"):
                 parts.append("Concomitant biopsy performed.")
 
             # Diagnoses, only if any are present
-            diagnoses = [d for d in [
-                row.get('diagnosis_1'), row.get('diagnosis_2'),
-                row.get('diagnosis_3'), row.get('diagnosis_4'),
-                row.get('diagnosis_5')
-            ] if pd.notna(d)]
+            diagnoses = [
+                d
+                for d in [
+                    row.get("diagnosis_1"),
+                    row.get("diagnosis_2"),
+                    row.get("diagnosis_3"),
+                    row.get("diagnosis_4"),
+                    row.get("diagnosis_5"),
+                ]
+                if pd.notna(d)
+            ]
             if diagnoses:
                 parts.append(f"Diagnosis details: {', '.join(diagnoses)}.")
 
             # Image type
-            image_type = row.get('image_type') if pd.notna(row.get('image_type')) else 'N/A'
+            image_type = (
+                row.get("image_type") if pd.notna(row.get("image_type")) else "N/A"
+            )
             parts.append(f"Image type: {image_type}.")
 
             # Combine parts with spaces
             return " ".join(parts)
-        self.meta_data['description'] = self.meta_data.apply(create_description, axis=1)
+
+        self.meta_data["description"] = self.meta_data.apply(create_description, axis=1)
+        self.meta_data = self.meta_data.rename(
+            columns={
+                "diagnosis_1": "condition",
+                "anatom_site_general": "body_location",
+                "sex": "gender",
+                "age_approx": "age",
+            },
+        )
 
         # Global configs
         self.classes = list(lbl_mapping)

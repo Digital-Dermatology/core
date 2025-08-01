@@ -81,6 +81,11 @@ class Derm7ptDataset(GenericImageDataset):
             lambda row: f"This dermoscopic image shows a {row['diagnosis']}.",
             axis=1,
         )
+        self.meta_data = self.meta_data.rename(
+            columns={
+                "diagnosis": "condition",
+            },
+        )
 
         # remove data quality issues if file is given
         self.remove_data_quality_issues(data_quality_issues_list)
@@ -90,7 +95,7 @@ class Derm7ptDataset(GenericImageDataset):
         self.LBL_COL = f"lbl_{label_col.value}"
         self.return_path = return_path
         self.classes = (
-            self.meta_data["diagnosis"].unique().tolist()
+            self.meta_data["condition"].unique().tolist()
             if label_col == Derm7ptLabel.DISEASE
             else ["benign", "malignant"]
         )

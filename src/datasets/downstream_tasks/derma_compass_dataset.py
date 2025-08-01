@@ -87,6 +87,12 @@ class DermaCompassDataset(BaseDataset):
         self.meta_data["description"] = self.meta_data.apply(
             DermaCompassDataset.make_description, axis=1
         )
+        self.meta_data = self.meta_data.rename(
+            columns={
+                "relatedDiseases": "condition",
+                "localization": "body_location",
+            },
+        )
         # global configs
         self.return_path = return_path
         self.IMG_COL = "path"

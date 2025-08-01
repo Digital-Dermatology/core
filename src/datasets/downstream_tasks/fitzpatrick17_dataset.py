@@ -114,6 +114,12 @@ class Fitzpatrick17kDataset(BaseDataset):
             for an individual with fitzpatrick skin type {row['fitzpatrick']}.",
             axis=1,
         )
+        self.meta_data = self.meta_data.rename(
+            columns={
+                "granular_partition_label": "condition",
+                "fitzpatrick": "fitzpatrick",
+            },
+        )
 
         # global configs
         self.return_fitzpatrick = return_fitzpatrick

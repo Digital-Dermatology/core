@@ -72,6 +72,16 @@ class ISIC2024Dataset(GenericImageDataset):
             axis=1,
         )
 
+        # harmonize columns
+        self.meta_data = self.meta_data.rename(
+            columns={
+                "target": "condition",
+                "tbp_lv_location_simple": "body_location",
+                "sex": "gender",
+                "age_approx": "age",
+            },
+        )
+
         # Global configs
         self.classes = list(lbl_mapping)
         self.n_classes = len(self.classes)

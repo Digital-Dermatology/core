@@ -64,6 +64,11 @@ class SD128Dataset(GenericImageDataset):
         self.meta_data["description"] = self.meta_data["description"].str.replace(
             "_", " "
         )
+        self.meta_data = self.meta_data.rename(
+            columns={
+                "diagnosis": "condition",
+            },
+        )
 
         # remove data quality issues if file is given
         self.remove_data_quality_issues(data_quality_issues_list)
@@ -73,7 +78,7 @@ class SD128Dataset(GenericImageDataset):
         self.LBL_COL = f"lbl_{label_col.value}"
         self.return_path = return_path
         self.classes = (
-            self.meta_data["diagnosis"].unique().tolist()
+            self.meta_data["condition"].unique().tolist()
             if label_col == SD128Label.DISEASE
             else ["benign", "malignant"]
         )

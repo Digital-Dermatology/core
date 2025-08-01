@@ -132,6 +132,15 @@ class PASSIONDataset(GenericImageDataset):
         self.meta_data["description"] = self.meta_data.apply(
             lambda row: " ".join(row["description"].split()), axis=1
         )
+        self.meta_data = self.meta_data.rename(
+            columns={
+                "diagnosis": "condition",
+                "body_loc": "body_location",
+                "sex": "gender",
+                "age": "age",
+                "fitzpatrick": "fitzpatrick",
+            },
+        )
 
         self.return_path = return_path
         self.return_embedding = return_embedding

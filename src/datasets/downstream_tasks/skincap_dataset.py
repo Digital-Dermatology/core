@@ -61,6 +61,12 @@ class SkinCapDataset(BaseDataset):
         self.meta_data["path"] = self.meta_data[self.IMG_COL].map(imageid_path_dict.get)
 
         self.meta_data["description"] = self.meta_data["caption_zh_polish_en"]
+        self.meta_data = self.meta_data.rename(
+            columns={
+                "disease": "condition",
+                "skin_tone": "fitzpatrick",
+            },
+        )
 
         # global configs
         self.return_path = return_path

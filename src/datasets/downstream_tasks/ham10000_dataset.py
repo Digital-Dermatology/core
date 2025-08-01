@@ -90,6 +90,14 @@ class HAM10000Dataset(BaseDataset):
 {'obtained through ' + row['dx_type'].replace('histo', 'biopsy') if str(row['dx_type']) != 'nan' else ''}.",
             axis=1,
         )
+        self.meta_data = self.meta_data.rename(
+            columns={
+                "cell_type": "condition",
+                "localization": "body_location",
+                "sex": "gender",
+                "age": "age",
+            },
+        )
 
         # global configs
         self.IMG_COL = "path"

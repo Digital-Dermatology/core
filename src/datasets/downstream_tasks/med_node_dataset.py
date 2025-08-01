@@ -47,3 +47,8 @@ class MedNodeDataset(GenericImageDataset):
         # remove data quality issues if file is given
         self.remove_data_quality_issues(data_quality_issues_list)
         self.meta_data.reset_index(drop=True, inplace=True)
+        self.meta_data = self.meta_data.rename(
+            columns={
+                "diagnosis": "condition",
+            },
+        )

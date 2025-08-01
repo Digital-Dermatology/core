@@ -126,6 +126,13 @@ class SCINDataset(BaseDataset):
         self.meta_data["description"] = self.meta_data.apply(
             lambda row: _generate_description(row), axis=1
         )
+        self.meta_data = self.meta_data.rename(
+            columns={
+                "dermatologist_skin_condition_label_name": "condition",
+                "sex_at_birth": "gender",
+                "age_group": "age",
+            },
+        )
         self.case_ids = self.meta_data["case_id"].tolist()
 
     def __len__(self):
