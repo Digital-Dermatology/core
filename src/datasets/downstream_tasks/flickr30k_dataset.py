@@ -68,12 +68,12 @@ class Flickr30kDataset(Dataset):
             arguments = inspect.getfullargspec(self.tokenizer).args
             if "padding" in arguments and "return_tensors" in arguments:
                 self.tokens = self.tokenizer(
-                    list(self.df["captions"].values),
+                    list(self.df["comment"].values),
                     padding="longest",
                     return_tensors="pt",
                 )
             else:
-                self.tokens = self.tokenizer(list(self.df["captions"].values))
+                self.tokens = self.tokenizer(list(self.df["comment"].values))
 
     def __len__(self):
         return len(self.df)
