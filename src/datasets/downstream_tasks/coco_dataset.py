@@ -302,34 +302,30 @@ def union_masks(coco, anns, height, width):
     return mask_union
 
 
-def make_mask_transform(image_transform: transforms.Compose) -> transforms.Compose:
-    mask_transforms = [transforms.Lambda(lambda pic: Image.fromarray(pic))]
-    for t in image_transform.transforms:
-        # deep‐copy so we don’t clobber the original
-        t_mask = copy.deepcopy(t)
+def _pil_to_long_tensor(pic):
+    return torch.from_numpy(np.array(pic, dtype=np.int64))
 
-        # if it’s a resize, force nearest‐neighbor
+
+def _pil_from_array(pic):
+    return Image.fromarray(pic)
+
+
+def make_mask_transform(image_transform: transforms.Compose) -> transforms.Compose:
+    mask_transforms = [transforms.Lambda(_pil_from_array)]
+    for t in image_transform.transforms:
+        # deep‐copy so we don't alter the original
+        t_mask = copy.deepcopy(t)
+        # if it's a resize, force nearest‐neighbor
         if isinstance(t_mask, transforms.Resize):
             t_mask.interpolation = InterpolationMode.NEAREST
-
-        # if it’s a CenterCrop (or any crop) it has no interpolation
+        # if it's a CenterCrop (or any crop) it has no interpolation
         # but we still want the same size arg
         elif isinstance(t_mask, transforms.CenterCrop):
-            # nothing to change here
             pass
-
-        # ToTensor on masks will normalize to [0,1] float – you probably
-        # want integer labels instead, so convert differently:
         elif isinstance(t_mask, transforms.ToTensor):
-            # replace with a lambda that just turns your PIL mask into LongTensor
-            t_mask = transforms.Lambda(
-                lambda pic: torch.from_numpy(np.array(pic, dtype=np.int64))
-            )
-
+            t_mask = transforms.Lambda(_pil_to_long_tensor)
         # drop any color/brightness etc transforms:
         else:
             continue
-
         mask_transforms.append(t_mask)
-
     return transforms.Compose(mask_transforms)
