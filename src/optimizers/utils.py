@@ -52,3 +52,36 @@ def get_optimizer_type(optimizer_name: str) -> Callable:
     if optimizer_cls is np.nan:
         raise ValueError("Invalid optimizer name.")
     return optimizer_cls
+
+
+def get_learning_rate_scheduler(
+    scheduler_name,
+    optimizer,
+    total_steps: int,
+    n_batches_per_epoch: int,
+    scheduler_epoch_cycles: int,
+    **scheduler_kwargs,
+):
+    from deepspeed.runtime.lr_schedules import WarmupDecayLR, WarmupLR
+
+    if scheduler_name is None:
+        scheduler = None
+    elif scheduler_name == "WarmupDecayLR":
+        scheduler = WarmupDecayLR(
+            optimizer,
+            total_num_steps=total_steps,
+            **scheduler_kwargs,
+        )
+    elif scheduler_name == "WarmupLR":
+        scheduler = WarmupLR(
+            optimizer,
+            **scheduler_kwargs,
+        )
+    elif scheduler_name == "CosineAnnealingLR":
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer=optimizer,
+            T_max=scheduler_epoch_cycles * n_batches_per_epoch,
+        )
+    else:
+        raise ValueError(f"Unknown learning rate scheduler: {scheduler_name}")
+    return scheduler
