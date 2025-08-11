@@ -6,7 +6,6 @@ import random
 from enum import Enum
 from typing import Optional
 
-import cv2
 import numpy as np
 import pandas as pd
 import torch
