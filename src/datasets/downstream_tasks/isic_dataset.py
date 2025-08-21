@@ -15,7 +15,7 @@ class ISICDataset(GenericImageDataset):
     def __init__(
         self,
         dataset_dir: Union[str, Path] = "data/dataset/",
-        isic_train_meta_name: Union[str, Path] = "metadata.csv",
+        isic_train_meta_name: Union[str, Path] = "metadata_merged.csv",
         transform=None,
         val_transform=None,
         return_path: bool = False,
@@ -109,6 +109,20 @@ class ISICDataset(GenericImageDataset):
             # Combine parts with spaces
             return " ".join(parts)
 
+        if "first_dataset_introduced" in self.meta_data.columns:
+            self.meta_data["first_dataset_introduced"] = (
+                self.meta_data["first_dataset_introduced"]
+                .str.replace("main_isic", "challenge-2024")
+                .str.replace("-training", "")
+                .str.replace("-validation", "")
+                .str.replace("-test", "")
+                .str.replace("-task-3", "")
+                .str.replace("-task-1-2", "")
+            )
+            self.meta_data["first_dataset_introduced"] = (
+                "ISIC-" + self.meta_data["first_dataset_introduced"]
+            )
+
         self.meta_data["description"] = self.meta_data.apply(create_description, axis=1)
         self.meta_data = self.meta_data.rename(
             columns={
@@ -116,6 +130,8 @@ class ISICDataset(GenericImageDataset):
                 "anatom_site_general": "body_location",
                 "sex": "gender",
                 "age_approx": "age",
+                "fitzpatrick_skin_type": "fitzpatrick",
+                "first_dataset_introduced": "dataset_desc",
             },
         )
 

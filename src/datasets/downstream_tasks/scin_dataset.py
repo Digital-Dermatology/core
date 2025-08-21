@@ -131,6 +131,7 @@ class SCINDataset(BaseDataset):
                 "dermatologist_skin_condition_label_name": "condition",
                 "sex_at_birth": "gender",
                 "age_group": "age",
+                "fitzpatrick_skin_type": "fitzpatrick",
             },
         )
         self.case_ids = self.meta_data["case_id"].tolist()
