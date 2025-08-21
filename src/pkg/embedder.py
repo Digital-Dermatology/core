@@ -87,6 +87,13 @@ class Embedder:
             "imagenet_vit_small": "",
             "imagenet_dino": f"{Embedder.base_path}/imagenet_dino/checkpoint-epoch100.pth",
             "simclr_imagenet": f"{Embedder.base_path}/simclr_imagenet/resnet50_imagenet_bs2k_epochs600.pth.tar",
+            # Foundation Models
+            "dino_derma": f"{Embedder.base_path}/fund/dino/checkpoint-epoch100.pth",
+            "dino_qderma": f"{Embedder.base_path}/fund/dino_qderma/checkpoint-epoch100.pth",
+            "inet_dino_qderma": f"{Embedder.base_path}/fund/inet_dino_qderma/checkpoint-epoch100.pth",
+            "ibot_derma": f"{Embedder.base_path}/fund/ibot/checkpoint-epoch100.pth",
+            "ibot_qderma": f"{Embedder.base_path}/fund/ibot_qderma/checkpoint-epoch100.pth",
+            "mae_qderma": f"{Embedder.base_path}/fund/mae_qderma/checkpoint-epoch100.pth",
             # Open-source Models
             "dinov2_vits14": "",
             "dinov2_vitb14": "",
@@ -123,6 +130,13 @@ class Embedder:
             ),
             "imagenet_dino": Embedder.load_dino,
             "simclr_imagenet": Embedder.load_simclr_imagenet,
+            # Foundation Models
+            "dino_derma": Embedder.load_dino,
+            "dino_qderma": Embedder.load_dino,
+            "inet_dino_qderma": Embedder.load_inet_dino,
+            "ibot_derma": Embedder.load_ibot,
+            "ibot_qderma": Embedder.load_ibot,
+            "mae_qderma": Embedder.load_mae,
             # Open-source Models
             "dinov2_vits14": partial(Embedder.load_dinov2, dino_model="dinov2_vits14"),
             "dinov2_vitb14": partial(Embedder.load_dinov2, dino_model="dinov2_vitb14"),
@@ -633,6 +647,39 @@ class Embedder:
             info.model_type = "ViT"
             info.ssl_type = "DINO"
             info.out_dim = out_dim
+            return model, info, config
+        return model
+
+    @staticmethod
+    def load_inet_dino(
+        ckp_path: str,
+        return_info: bool = False,
+        debug: bool = False,
+        **kwargs,
+    ) -> torch.nn.Module:
+        # retreive the config file
+        config = {}
+        to_restore = {"config": config}
+        Embedder.restart_from_checkpoint(
+            ckp_path,
+            run_variables=to_restore,
+            hide_logs=True,
+        )
+        config = to_restore["config"]
+        base_model_name = config["model"]["base_model"].replace("pretrained_", "")
+        model, info, config = Embedder.load_pretrained(
+            base_model_name,
+            return_info=True,
+        )
+        Embedder.restart_from_checkpoint(
+            ckp_path,
+            replace_ckp_str="backbone.",
+            run_variables=to_restore,
+            hide_logs=True,
+            student=model,
+        )
+        set_requires_grad(model, True)
+        if return_info:
             return model, info, config
         return model
 
