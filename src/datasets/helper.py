@@ -7,6 +7,7 @@ from torch.utils.data import ConcatDataset, DataLoader
 from torchvision.datasets import CIFAR10
 
 from ...src.datasets.base_dataset import BaseDataset
+from ...src.datasets.downstream_tasks.altmeyers_dataset import AltmeyersDataset
 from ...src.datasets.downstream_tasks.celeba_dataset import CelebADataset
 from ...src.datasets.downstream_tasks.chest_xray_covid_dataset import (
     ChestXrayCovidDataset,
@@ -30,6 +31,7 @@ from ...src.datasets.downstream_tasks.pad_ufes_20_dataset import PADUFES20Datase
 from ...src.datasets.downstream_tasks.passion_dataset import PASSIONDataset
 from ...src.datasets.downstream_tasks.pcam_dataset import PatchCamelyonDataset
 from ...src.datasets.downstream_tasks.ph2_dataset import PH2Dataset
+from ...src.datasets.downstream_tasks.pubmed_noisy_dataset import PubmedNoisyDataset
 from ...src.datasets.downstream_tasks.scin_dataset import SCINDataset
 from ...src.datasets.downstream_tasks.sd_128_dataset import SD128Dataset
 from ...src.datasets.downstream_tasks.skincap_dataset import SkinCapDataset
@@ -55,6 +57,8 @@ class DatasetName(Enum):
     SKINCAP = "SkinCap"
     SCIN = "SCIN"
     ISIC = "ISIC"
+    PUBMED_NOISY = "PubmedNoisy"
+    ALTMEYERS = "Altmeyers"
 
     CHEXPERT = "CheXpert"
     CHEST_XRAY_COVID = "Chest_Xray_COVID"
@@ -190,6 +194,20 @@ def get_dataset(
         dataset_path = dataset_path / "ISIC_2024/"
         dataset = ISIC2024Dataset(
             dataset_path,
+            transform=transform,
+            return_path=True,
+            **kwargs,
+        )
+    elif dataset_name == DatasetName.PUBMED_NOISY:
+        dataset = PubmedNoisyDataset(
+            dataset_dir=dataset_path,
+            transform=transform,
+            return_path=True,
+            **kwargs,
+        )
+    elif dataset_name == DatasetName.ALTMEYERS:
+        dataset = AltmeyersDataset(
+            dataset_dir=dataset_path,
             transform=transform,
             return_path=True,
             **kwargs,

@@ -82,14 +82,29 @@ class HAM10000Dataset(BaseDataset):
         self.LBL_COL = "cell_type_idx"
 
         # create the description
-        self.meta_data["description"] = self.meta_data.apply(
-            lambda row: f"This dermoscopic image shows a close up {row['cell_type']} \
-{'on the ' + row['localization'] if str(row['localization']) != 'nan' else ''} \
-{'for a ' + row['sex'] + ' patient' if str(row['sex']) != 'nan' else ''} \
-{'of age ' + str(int(row['age'])) if str(row['age']) != 'nan' else ''} \
-{'obtained through ' + row['dx_type'].replace('histo', 'biopsy') if str(row['dx_type']) != 'nan' else ''}.",
-            axis=1,
-        )
+        def create_description(row):
+            parts = [f"This dermoscopic image shows a close up {row['cell_type']}"]
+
+            if pd.notna(row["localization"]):
+                parts.append(f"on the {row['localization']}")
+
+            if pd.notna(row["sex"]):
+                parts.append(f"for a {row['sex']} patient")
+
+            if pd.notna(row["age"]):
+                try:
+                    age_int = int(row["age"])
+                    parts.append(f"of age {age_int}")
+                except (ValueError, TypeError):
+                    pass
+
+            if pd.notna(row["dx_type"]):
+                dx_type = row["dx_type"].replace("histo", "biopsy")
+                parts.append(f"obtained through {dx_type}")
+
+            return " ".join(parts) + "."
+
+        self.meta_data["description"] = self.meta_data.apply(create_description, axis=1)
         self.meta_data = self.meta_data.rename(
             columns={
                 "cell_type": "condition",

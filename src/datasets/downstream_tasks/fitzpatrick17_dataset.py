@@ -108,12 +108,28 @@ class Fitzpatrick17kDataset(BaseDataset):
         self.meta_data.reset_index(drop=True, inplace=True)
 
         # create description
-        self.meta_data["description"] = self.meta_data.apply(
-            lambda row: f"This image shows the skin condition \
-            {row['granular_partition_label']}, {row['nine_partition_label']}, {row['three_partition_label']} \
-            for an individual with fitzpatrick skin type {row['fitzpatrick']}.",
-            axis=1,
-        )
+        def create_description(row):
+            condition_parts = []
+
+            if pd.notna(row["granular_partition_label"]):
+                condition_parts.append(row["granular_partition_label"])
+            if pd.notna(row["nine_partition_label"]):
+                condition_parts.append(row["nine_partition_label"])
+            if pd.notna(row["three_partition_label"]):
+                condition_parts.append(row["three_partition_label"])
+
+            condition_text = (
+                ", ".join(condition_parts) if condition_parts else "skin condition"
+            )
+
+            description = f"This image shows the skin condition {condition_text}"
+
+            if pd.notna(row["fitzpatrick"]):
+                description += f" for an individual with fitzpatrick skin type {row['fitzpatrick']}"
+
+            return description + "."
+
+        self.meta_data["description"] = self.meta_data.apply(create_description, axis=1)
         self.meta_data = self.meta_data.rename(
             columns={
                 "granular_partition_label": "condition",

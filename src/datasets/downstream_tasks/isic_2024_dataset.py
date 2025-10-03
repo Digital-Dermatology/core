@@ -58,19 +58,36 @@ class ISIC2024Dataset(GenericImageDataset):
         self.meta_data["target"] = self.meta_data["target"].apply(
             lambda x: class_mapper.get(x)
         )
+        self.meta_data["target"] = self.meta_data["target"] + " skin lesion"
         self.meta_data["diagnosis"] = self.meta_data["target"]
         int_lbl, lbl_mapping = pd.factorize(self.meta_data["diagnosis"])
         self.meta_data["lbl_diagnosis"] = int_lbl
 
         # create the description
-        self.meta_data["description"] = self.meta_data.apply(
-            lambda row: f"This total body photograph tile shows a close up {row['target']} skin condition \
-{'on the ' + row['tbp_lv_location_simple'] if str(row['tbp_lv_location_simple']) != 'nan' else ''} \
-{'(' + row['anatom_site_general'] + ')' if str(row['anatom_site_general']) != 'nan' else ''} \
-{'for a ' + row['sex'] + ' patient' if str(row['sex']) != 'nan' else ''} \
-{'of age ' + str(int(row['age_approx'])) if str(row['age_approx']) != 'nan' else ''}.",
-            axis=1,
-        )
+        def create_description(row):
+            parts = [
+                f"This total body photograph tile shows a close up {row['target']} skin condition"
+            ]
+
+            if pd.notna(row["tbp_lv_location_simple"]):
+                parts.append(f"on the {row['tbp_lv_location_simple']}")
+
+            if pd.notna(row["anatom_site_general"]):
+                parts.append(f"({row['anatom_site_general']})")
+
+            if pd.notna(row["sex"]):
+                parts.append(f"for a {row['sex']} patient")
+
+            if pd.notna(row["age_approx"]):
+                try:
+                    age_int = int(row["age_approx"])
+                    parts.append(f"of age {age_int}")
+                except (ValueError, TypeError):
+                    pass
+
+            return " ".join(parts) + "."
+
+        self.meta_data["description"] = self.meta_data.apply(create_description, axis=1)
 
         # harmonize columns
         self.meta_data = self.meta_data.rename(

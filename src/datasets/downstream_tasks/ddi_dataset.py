@@ -77,12 +77,38 @@ class DDIDataset(BaseDataset):
             self.meta_data[DDILabel.MALIGNANT.value[1]] == "True"
         ).astype(int)
 
-        self.meta_data["description"] = self.meta_data.apply(
-            lambda row: f"This clinical image shows a {row['disease']} \
-for a patient with fitzpatrick skin type {str(int(row['skin_tone']))[0]} or {str(int(row['skin_tone']))[1]} \
-obtained through biopsy.",
-            axis=1,
-        )
+        def create_description(row):
+            disease = row["disease"]
+            skin_tone = row["skin_tone"]
+
+            if pd.notna(skin_tone):
+                try:
+                    skin_tone_str = str(skin_tone).split(".")[
+                        0
+                    ]  # Handle floats like 34.0 -> "34"
+                    # Validate that skin_tone_str contains only digits
+                    if skin_tone_str.isdigit():
+                        if len(skin_tone_str) >= 2:
+                            skin_type_text = f"with fitzpatrick skin type {skin_tone_str[0]} or {skin_tone_str[1]}"
+                        else:
+                            skin_type_text = (
+                                f"with fitzpatrick skin type {skin_tone_str}"
+                            )
+                    else:
+                        skin_type_text = ""
+                except:
+                    skin_type_text = ""
+            else:
+                skin_type_text = ""
+
+            description_parts = [f"This clinical image shows a {disease}"]
+            if skin_type_text:
+                description_parts.append(f"for a patient {skin_type_text}")
+            description_parts.append("obtained through biopsy.")
+
+            return " ".join(description_parts)
+
+        self.meta_data["description"] = self.meta_data.apply(create_description, axis=1)
 
         # remove data quality issues if file is given
         self.remove_data_quality_issues(data_quality_issues_list)

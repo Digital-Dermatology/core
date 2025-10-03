@@ -73,19 +73,37 @@ class PADUFES20Dataset(BaseDataset):
         int_lbl, lbl_mapping = pd.factorize(self.meta_data[self.LBL_COL])
         self.meta_data[self.LBL_COL + "_name"] = self.meta_data[self.LBL_COL]
         self.meta_data[self.LBL_COL] = int_lbl
+
         # create captions
-        self.meta_data["description"] = self.meta_data.apply(
-            lambda row: f"This dermoscopy image shows a {row['diagnostic_name']} \
-on the {row['region'].lower()} \
-{'for a ' + row['gender'].lower() + ' patient' if str(row['gender']) != 'nan' else ''} \
-{'with fitzpatrick skin type ' + str(int(row['fitspatrick'])) if str(row['fitspatrick']) != 'nan' else ''} \
-{'of age ' + str(int(row['age'])) if str(row['age']) != 'nan' else ''} \
-{'obtained through biopsy' if str(row['biopsed']) == 'True' else ''}.",
-            axis=1,
-        )
-        self.meta_data["description"] = self.meta_data.apply(
-            lambda row: " ".join(row["description"].split()), axis=1
-        )
+        def create_description(row):
+            parts = [
+                f"This dermoscopy image shows a {row['diagnostic_name']} on the {row['region'].lower()}"
+            ]
+
+            if pd.notna(row["gender"]):
+                parts.append(f"for a {row['gender'].lower()} patient")
+
+            if pd.notna(row["fitspatrick"]):
+                try:
+                    fitzpatrick_int = int(row["fitspatrick"])
+                    parts.append(f"with fitzpatrick skin type {fitzpatrick_int}")
+                except (ValueError, TypeError):
+                    pass
+
+            if pd.notna(row["age"]):
+                try:
+                    age_int = int(row["age"])
+                    parts.append(f"of age {age_int}")
+                except (ValueError, TypeError):
+                    pass
+
+            if str(row["biopsed"]) == "True":
+                parts.append("obtained through biopsy")
+
+            description = " ".join(parts) + "."
+            return " ".join(description.split())  # Clean up extra whitespace
+
+        self.meta_data["description"] = self.meta_data.apply(create_description, axis=1)
         # remove data quality issues if file is given
         self.remove_data_quality_issues(data_quality_issues_list)
         self.meta_data.reset_index(drop=True, inplace=True)

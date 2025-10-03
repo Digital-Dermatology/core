@@ -120,18 +120,40 @@ class PASSIONDataset(GenericImageDataset):
         self.meta_data[self.LBL_COL] = int_lbl
 
         # create the description
-        self.meta_data["description"] = self.meta_data.apply(
-            lambda row: f"This clinical image shows a {row['diagnosis'].strip()} \
-{'on the ' + ','.join([x for x in row['body_loc'] if x != 'none']) if len([x for x in row['body_loc'] if x != 'none']) > 0 else ''} \
-{'for a ' + row['sex'].replace('m', 'male').replace('f', 'female') + ' patient' if str(row['sex']) != 'nan' else ''} \
-{'with ' + row['fitzpatrick'] if str(row['fitzpatrick']) != 'nan' else ''} \
-{'of age ' + str(int(row['age'])) if str(row['age']) != 'nan' else ''} \
-{'from ' + row['country'] if str(row['country']) != 'nan' else ''}.",
-            axis=1,
-        )
-        self.meta_data["description"] = self.meta_data.apply(
-            lambda row: " ".join(row["description"].split()), axis=1
-        )
+        def create_description(row):
+            parts = [f"This clinical image shows a {row['diagnosis'].strip()}"]
+
+            # Handle body location
+            if isinstance(row["body_loc"], list):
+                body_locs = [x for x in row["body_loc"] if x != "none"]
+                if body_locs:
+                    parts.append(f"on the {','.join(body_locs)}")
+
+            # Handle gender
+            if pd.notna(row["sex"]):
+                gender = row["sex"].replace("m", "male").replace("f", "female")
+                parts.append(f"for a {gender} patient")
+
+            # Handle fitzpatrick
+            if pd.notna(row["fitzpatrick"]):
+                parts.append(f"with {row['fitzpatrick']}")
+
+            # Handle age
+            if pd.notna(row["age"]):
+                try:
+                    age_int = int(row["age"])
+                    parts.append(f"of age {age_int}")
+                except (ValueError, TypeError):
+                    pass
+
+            # Handle country
+            if pd.notna(row["country"]):
+                parts.append(f"from {row['country']}")
+
+            description = " ".join(parts) + "."
+            return " ".join(description.split())  # Clean up extra whitespace
+
+        self.meta_data["description"] = self.meta_data.apply(create_description, axis=1)
         self.meta_data = self.meta_data.rename(
             columns={
                 "diagnosis": "condition",
