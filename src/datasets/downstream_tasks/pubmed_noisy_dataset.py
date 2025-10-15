@@ -57,7 +57,9 @@ class PubmedNoisyDataset(BaseDataset):
         )
 
         # Use caption as description with light preprocessing
-        self.meta_data["description"] = self.meta_data["caption"].apply(self._preprocess_caption)
+        self.meta_data["description"] = self.meta_data["caption"].apply(
+            self._preprocess_caption
+        )
 
         # Create image names
         self.meta_data["img_name"] = self.meta_data["image_name"].apply(
@@ -75,7 +77,9 @@ class PubmedNoisyDataset(BaseDataset):
 
         # Global configs
         self.return_path = return_path
-        self.classes = ["medical_image"]  # Generic class since we don't have specific diagnoses
+        self.classes = [
+            "medical_image"
+        ]  # Generic class since we don't have specific diagnoses
         self.n_classes = 1
 
     def _preprocess_caption(self, caption):
@@ -88,24 +92,26 @@ class PubmedNoisyDataset(BaseDataset):
         caption = str(caption).strip()
 
         # Remove excessive whitespace
-        caption = re.sub(r'\s+', ' ', caption)
+        caption = re.sub(r"\s+", " ", caption)
 
         # Clean up panel references
-        caption = re.sub(r'\bPanel [A-Z][\s:]*', '', caption)
-        caption = re.sub(r'\b\([A-Z]\)[\s:]*', '', caption)
+        caption = re.sub(r"\bPanel [A-Z][\s:]*", "", caption)
+        caption = re.sub(r"\b\([A-Z]\)[\s:]*", "", caption)
 
         # Remove figure/table references
-        caption = re.sub(r'\bFig\w*\.?\s*\d+[A-Z]?[\s:]*', '', caption, flags=re.IGNORECASE)
-        caption = re.sub(r'\bTable\s*\d+[A-Z]?[\s:]*', '', caption, flags=re.IGNORECASE)
+        caption = re.sub(
+            r"\bFig\w*\.?\s*\d+[A-Z]?[\s:]*", "", caption, flags=re.IGNORECASE
+        )
+        caption = re.sub(r"\bTable\s*\d+[A-Z]?[\s:]*", "", caption, flags=re.IGNORECASE)
 
         # Remove excessive punctuation
-        caption = re.sub(r'[.]{2,}', '.', caption)
-        caption = re.sub(r'[,]{2,}', ',', caption)
+        caption = re.sub(r"[.]{2,}", ".", caption)
+        caption = re.sub(r"[,]{2,}", ",", caption)
 
         # Ensure proper sentence structure
         caption = caption.strip()
-        if caption and not caption.endswith(('.', '!', '?')):
-            caption += '.'
+        if caption and not caption.endswith((".", "!", "?")):
+            caption += "."
 
         # Capitalize first letter
         if caption:

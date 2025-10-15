@@ -14,6 +14,7 @@ from ...src.datasets.downstream_tasks.chest_xray_covid_dataset import (
 )
 from ...src.datasets.downstream_tasks.chexpert_dataset import CheXpertDataset
 from ...src.datasets.downstream_tasks.ddi_dataset import DDIDataset
+from ...src.datasets.downstream_tasks.derm1m_dataset import Derm1MDataset
 from ...src.datasets.downstream_tasks.derm7pt_dataset import Derm7ptDataset
 from ...src.datasets.downstream_tasks.derma_compass_dataset import DermaCompassDataset
 from ...src.datasets.downstream_tasks.fitzpatrick17_dataset import Fitzpatrick17kDataset
@@ -59,6 +60,7 @@ class DatasetName(Enum):
     ISIC = "ISIC"
     PUBMED_NOISY = "PubmedNoisy"
     ALTMEYERS = "Altmeyers"
+    DERM1M = "Derm1M"
 
     CHEXPERT = "CheXpert"
     CHEST_XRAY_COVID = "Chest_Xray_COVID"
@@ -207,6 +209,13 @@ def get_dataset(
         )
     elif dataset_name == DatasetName.ALTMEYERS:
         dataset = AltmeyersDataset(
+            dataset_dir=dataset_path,
+            transform=transform,
+            return_path=True,
+            **kwargs,
+        )
+    elif dataset_name == DatasetName.DERM1M:
+        dataset = Derm1MDataset(
             dataset_dir=dataset_path,
             transform=transform,
             return_path=True,

@@ -57,7 +57,9 @@ class AltmeyersDataset(BaseDataset):
         )
 
         # Use caption as description with light preprocessing
-        self.meta_data["description"] = self.meta_data["caption"].apply(self._preprocess_caption)
+        self.meta_data["description"] = self.meta_data["caption"].apply(
+            self._preprocess_caption
+        )
 
         # Create image names
         self.meta_data["img_name"] = self.meta_data["path"].apply(
@@ -92,22 +94,24 @@ class AltmeyersDataset(BaseDataset):
         caption = str(caption).strip()
 
         # Remove excessive whitespace and newlines
-        caption = re.sub(r'\s+', ' ', caption)
-        caption = re.sub(r'\n+', ' ', caption)
+        caption = re.sub(r"\s+", " ", caption)
+        caption = re.sub(r"\n+", " ", caption)
 
         # Remove common German/English prefixes with condition names
         # Pattern: "Condition name: description" -> keep both
         # We don't remove the condition name as it's valuable information
 
         # Clean up excessive punctuation
-        caption = re.sub(r'[.]{2,}', '.', caption)
-        caption = re.sub(r'[,]{2,}', ',', caption)
-        caption = re.sub(r'[\s]+([.,;:])', r'\1', caption)  # Remove space before punctuation
+        caption = re.sub(r"[.]{2,}", ".", caption)
+        caption = re.sub(r"[,]{2,}", ",", caption)
+        caption = re.sub(
+            r"[\s]+([.,;:])", r"\1", caption
+        )  # Remove space before punctuation
 
         # Ensure proper sentence structure
         caption = caption.strip()
-        if caption and not caption.endswith(('.', '!', '?')):
-            caption += '.'
+        if caption and not caption.endswith((".", "!", "?")):
+            caption += "."
 
         # Capitalize first letter
         if caption:
