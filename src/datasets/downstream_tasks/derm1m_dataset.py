@@ -133,6 +133,12 @@ class Derm1MDataset(BaseDataset):
         else:
             self.meta_data["description"] = self.meta_data[self.LBL_COL]
 
+        # Use truncated_caption as description_short for consistency
+        if "truncated_caption" in self.meta_data.columns:
+            self.meta_data["description_short"] = self.meta_data["truncated_caption"]
+        else:
+            self.meta_data["description_short"] = self.meta_data["description"]
+
         # Map disease_label to condition for consistency with other datasets
         self.meta_data["condition"] = self.meta_data[self.LBL_COL]
 
