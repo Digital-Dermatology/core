@@ -96,8 +96,38 @@ class Derm1MDataset(BaseDataset):
             )
 
         # Create full image paths
-        self.meta_data[self.IMG_COL] = self.meta_data["filename"].apply(
-            lambda x: str(self.dataset_dir / x)
+        # For validation data, filenames have "validation_data/" prefix but images are in source folders
+        def construct_image_path(row):
+            filename = row["filename"]
+            # If filename starts with "validation_data/", use source to determine actual folder
+            if filename.startswith("validation_data/"):
+                # Strip the validation_data prefix
+                actual_filename = filename.replace("validation_data/", "")
+
+                # Map source to folder name
+                source = row.get("source", "")
+                source_mapping = {
+                    "youtube": "youtube",
+                    "pubmed_english": "pubmed",
+                    "pubmed_fail": "pubmed",
+                    "textbook_english": "edu",
+                    "textbook_fail": "edu",
+                    "twitter_english": "twitter",
+                    "IIYI_chinese": "IIYI",
+                    "public_medical_dataset": "public",
+                    "textbook_chinese": "edu",
+                    "public": "public",
+                    "reddit_english": "reddit",
+                }
+
+                folder = source_mapping.get(source, source)
+                return str(self.dataset_dir / folder / actual_filename)
+            else:
+                # For pretrain data, use filename as-is
+                return str(self.dataset_dir / filename)
+
+        self.meta_data[self.IMG_COL] = self.meta_data.apply(
+            construct_image_path, axis=1
         )
 
         # Add img_name column for consistency with other datasets
@@ -161,12 +191,18 @@ class Derm1MDataset(BaseDataset):
                 self.meta_data["age"], errors="coerce"
             )
 
-        # Filter out rows where image file doesn't exist (optional, can be commented out)
-        # self.meta_data = self.meta_data[
-        #     self.meta_data[self.IMG_COL].apply(lambda x: Path(x).exists())
-        # ]
+        # Filter out rows where image file doesn't exist
+        # This is necessary for validation split where many files are missing
+        print(f"Checking file existence for {len(self.meta_data)} samples...")
+        exists_mask = self.meta_data[self.IMG_COL].apply(lambda x: Path(x).exists())
+        missing_count = (~exists_mask).sum()
+
+        if missing_count > 0:
+            print(f"Warning: {missing_count} files not found and will be filtered out")
+            self.meta_data = self.meta_data[exists_mask]
 
         self.meta_data.reset_index(drop=True, inplace=True)
+        print(f"Final dataset size: {len(self.meta_data)} samples")
 
         # Create integer labels for classification tasks
         int_lbl, lbl_mapping = pd.factorize(self.meta_data[self.LBL_COL])
