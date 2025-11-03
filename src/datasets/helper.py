@@ -13,6 +13,7 @@ from ...src.datasets.downstream_tasks.chest_xray_covid_dataset import (
     ChestXrayCovidDataset,
 )
 from ...src.datasets.downstream_tasks.chexpert_dataset import CheXpertDataset
+from ...src.datasets.downstream_tasks.daffodil_dataset import DaffodilDataset
 from ...src.datasets.downstream_tasks.ddi_dataset import DDIDataset
 from ...src.datasets.downstream_tasks.derm1m_dataset import Derm1MDataset
 from ...src.datasets.downstream_tasks.derm7pt_dataset import Derm7ptDataset
@@ -24,7 +25,9 @@ from ...src.datasets.downstream_tasks.imagenet_1k_dataset import ImageNet1kDatas
 from ...src.datasets.downstream_tasks.isic_2019_dataset import ISIC2019Dataset
 from ...src.datasets.downstream_tasks.isic_2024_dataset import ISIC2024Dataset
 from ...src.datasets.downstream_tasks.isic_dataset import ISICDataset
+from ...src.datasets.downstream_tasks.lesion130k_dataset import LESION130kDataset
 from ...src.datasets.downstream_tasks.med_node_dataset import MedNodeDataset
+from ...src.datasets.downstream_tasks.mm_skinqa_dataset import MMSkinQADataset
 from ...src.datasets.downstream_tasks.oxford_flowers102_dataset import (
     OxfordFlower102Dataset,
 )
@@ -61,6 +64,9 @@ class DatasetName(Enum):
     PUBMED_NOISY = "PubmedNoisy"
     ALTMEYERS = "Altmeyers"
     DERM1M = "Derm1M"
+    DAFFODIL = "Daffodil"
+    LESION130K = "LESION130k"
+    MM_SKINQA = "MM-SkinQA"
 
     CHEXPERT = "CheXpert"
     CHEST_XRAY_COVID = "Chest_Xray_COVID"
@@ -216,6 +222,27 @@ def get_dataset(
         )
     elif dataset_name == DatasetName.DERM1M:
         dataset = Derm1MDataset(
+            dataset_dir=dataset_path,
+            transform=transform,
+            return_path=True,
+            **kwargs,
+        )
+    elif dataset_name == DatasetName.DAFFODIL:
+        dataset = DaffodilDataset(
+            dataset_dir=dataset_path,
+            transform=transform,
+            return_path=True,
+            **kwargs,
+        )
+    elif dataset_name == DatasetName.LESION130K:
+        dataset = LESION130kDataset(
+            dataset_dir=dataset_path,
+            transform=transform,
+            return_path=True,
+            **kwargs,
+        )
+    elif dataset_name == DatasetName.MM_SKINQA:
+        dataset = MMSkinQADataset(
             dataset_dir=dataset_path,
             transform=transform,
             return_path=True,
