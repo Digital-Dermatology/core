@@ -98,6 +98,9 @@ class Embedder:
             "dinov2_vits14": "",
             "dinov2_vitb14": "",
             "monet": "",
+            # PanDerm Models
+            "panderm_base": "",
+            "panderm_large": "",
         }
         # get the model url
         model_url = model_dict.get(ssl, np.nan)
@@ -145,6 +148,9 @@ class Embedder:
                 hf_name="suinleelab/monet",
                 out_dim=4096,
             ),
+            # PanDerm Models
+            "panderm_base": partial(Embedder.load_panderm, variant="base"),
+            "panderm_large": partial(Embedder.load_panderm, variant="large"),
         }
         model_func = model_dict_func.get(ssl, None)
         if model_func is None:
@@ -279,6 +285,8 @@ class Embedder:
 
         # Determine model variant from kwargs or checkpoint name
         variant = kwargs.get("variant", "large")
+
+        # Auto-detect variant from checkpoint filename if not specified
         if "panderm_bb" in ckp_path:
             variant = "base"
         elif "panderm_ll" in ckp_path:
@@ -292,8 +300,19 @@ class Embedder:
             model = panderm_large_patch16_224()
             out_dim = 1024
 
+        # Check if ckp_path is a valid file path
+        # If load_pretrained was called with an empty model_url, ckp_path will be a temp file
+        # In that case, we need to get the actual checkpoint path from kwargs
+        actual_ckp_path = kwargs.get("checkpoint_path", ckp_path)
+
+        if not os.path.isfile(actual_ckp_path):
+            raise FileNotFoundError(
+                f"PanDerm checkpoint not found at {actual_ckp_path}. "
+                f"Please download the checkpoint or provide a valid path using --checkpoint_path"
+            )
+
         # Load checkpoint
-        checkpoint = torch.load(ckp_path, map_location="cpu")
+        checkpoint = torch.load(actual_ckp_path, map_location="cpu")
 
         # Handle different checkpoint structures
         # Large model has "encoder." prefix, base model doesn't
