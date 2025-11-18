@@ -269,6 +269,62 @@ class Embedder:
         return model
 
     @staticmethod
+    def load_panderm(
+        ckp_path: str,
+        return_info: bool = False,
+        debug: bool = False,
+        **kwargs,
+    ) -> torch.nn.Module:
+        from .helper_panderm import panderm_base_patch16_224, panderm_large_patch16_224
+
+        # Determine model variant from kwargs or checkpoint name
+        variant = kwargs.get("variant", "large")
+        if "panderm_bb" in ckp_path:
+            variant = "base"
+        elif "panderm_ll" in ckp_path:
+            variant = "large"
+
+        # Load appropriate model architecture
+        if variant == "base":
+            model = panderm_base_patch16_224()
+            out_dim = 768
+        else:
+            model = panderm_large_patch16_224()
+            out_dim = 1024
+
+        # Load checkpoint
+        checkpoint = torch.load(ckp_path, map_location="cpu")
+
+        # Handle different checkpoint structures
+        # Large model has "encoder." prefix, base model doesn't
+        if "encoder.cls_token" in checkpoint:
+            # Large model format - need to strip "encoder." prefix
+            state_dict = {
+                k.replace("encoder.", ""): v
+                for k, v in checkpoint.items()
+                if k.startswith("encoder.")
+            }
+        elif "model" in checkpoint:
+            # Wrapped in "model" key
+            state_dict = checkpoint["model"]
+            state_dict = {k.replace("encoder.", ""): v for k, v in state_dict.items()}
+        else:
+            # Base model format - direct state dict
+            state_dict = checkpoint
+
+        model.load_state_dict(state_dict, strict=False)
+        model = Wrapper(model)
+        set_requires_grad(model, True)
+        if return_info:
+            # information about the model
+            info = SimpleNamespace()
+            info.model_type = "ViT"
+            info.ssl_type = f"PanDerm-{variant.capitalize()}"
+            info.out_dim = kwargs.get("out_dim", out_dim)
+            return model, info, {}
+        return model
+
+    @staticmethod
     def load_dinov2(
         ckp_path: str,
         return_info: bool = False,

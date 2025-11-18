@@ -63,7 +63,15 @@ class LESION130kDataset(BaseDataset):
         self.meta_data = pd.read_csv(csv_file, skiprows=1, sep=" ")
 
         # The first column is the image ID (e.g., "00000")
-        self.meta_data.columns = ["image_id", "dataset_source", "x_center", "y_center", "width", "height", "url"]
+        self.meta_data.columns = [
+            "image_id",
+            "dataset_source",
+            "x_center",
+            "y_center",
+            "width",
+            "height",
+            "url",
+        ]
 
         # Construct full image paths
         # Images are stored as {image_id}.jpg in the images folder
