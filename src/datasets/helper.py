@@ -18,9 +18,11 @@ from ...src.datasets.downstream_tasks.ddi_dataset import DDIDataset
 from ...src.datasets.downstream_tasks.derm1m_dataset import Derm1MDataset
 from ...src.datasets.downstream_tasks.derm7pt_dataset import Derm7ptDataset
 from ...src.datasets.downstream_tasks.derma_compass_dataset import DermaCompassDataset
+from ...src.datasets.downstream_tasks.dermnet_csv_dataset import DermNetCSVDataset
 from ...src.datasets.downstream_tasks.fitzpatrick17_dataset import Fitzpatrick17kDataset
 from ...src.datasets.downstream_tasks.food101_dataset import Food101Dataset
 from ...src.datasets.downstream_tasks.ham10000_dataset import HAM10000Dataset
+from ...src.datasets.downstream_tasks.hiba_dataset import HIBADataset
 from ...src.datasets.downstream_tasks.imagenet_1k_dataset import ImageNet1kDataset
 from ...src.datasets.downstream_tasks.isic_2019_dataset import ISIC2019Dataset
 from ...src.datasets.downstream_tasks.isic_2024_dataset import ISIC2024Dataset
@@ -28,6 +30,7 @@ from ...src.datasets.downstream_tasks.isic_dataset import ISICDataset
 from ...src.datasets.downstream_tasks.lesion130k_dataset import LESION130kDataset
 from ...src.datasets.downstream_tasks.med_node_dataset import MedNodeDataset
 from ...src.datasets.downstream_tasks.mm_skinqa_dataset import MMSkinQADataset
+from ...src.datasets.downstream_tasks.mskcc_dataset import MSKCCDataset
 from ...src.datasets.downstream_tasks.oxford_flowers102_dataset import (
     OxfordFlower102Dataset,
 )
@@ -67,6 +70,9 @@ class DatasetName(Enum):
     DAFFODIL = "Daffodil"
     LESION130K = "LESION130k"
     MM_SKINQA = "MM-SkinQA"
+    HIBA = "HIBA"
+    MSKCC = "MSKCC"
+    DERMNET_CSV = "DermNet-CSV"
 
     CHEXPERT = "CheXpert"
     CHEST_XRAY_COVID = "Chest_Xray_COVID"
@@ -243,6 +249,30 @@ def get_dataset(
         )
     elif dataset_name == DatasetName.MM_SKINQA:
         dataset = MMSkinQADataset(
+            dataset_dir=dataset_path,
+            transform=transform,
+            return_path=True,
+            **kwargs,
+        )
+    elif dataset_name == DatasetName.HIBA:
+        dataset_path = dataset_path / "HIBA/"
+        dataset = HIBADataset(
+            dataset_dir=dataset_path,
+            transform=transform,
+            return_path=True,
+            **kwargs,
+        )
+    elif dataset_name == DatasetName.MSKCC:
+        dataset_path = dataset_path / "MSKCC/"
+        dataset = MSKCCDataset(
+            dataset_dir=dataset_path,
+            transform=transform,
+            return_path=True,
+            **kwargs,
+        )
+    elif dataset_name == DatasetName.DERMNET_CSV:
+        dataset_path = dataset_path / "Dermnet/"
+        dataset = DermNetCSVDataset(
             dataset_dir=dataset_path,
             transform=transform,
             return_path=True,
