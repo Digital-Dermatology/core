@@ -76,7 +76,6 @@ class DermNetCSVDataset(GenericImageDataset):
                 "diagnosis": "condition",
             },
         )
-        self.meta_data["dataset_desc"] = "DermNet-CSV"
 
         # Global configs
         self.classes = list(lbl_mapping)
