@@ -92,7 +92,9 @@ class MSKCCDataset(GenericImageDataset):
 
             # Image type
             image_type = (
-                row.get("image_type") if pd.notna(row.get("image_type")) else "dermoscopic"
+                row.get("image_type")
+                if pd.notna(row.get("image_type"))
+                else "dermoscopic"
             )
             parts.append(f"Image type: {image_type}.")
 

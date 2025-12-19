@@ -58,12 +58,19 @@ class PADUFES20Dataset(BaseDataset):
             raise ValueError(f"Image path must exist, path: {self.root_dir}")
         # load the metadata and encode the label
         self.meta_data = pd.DataFrame(pd.read_csv(self.csv_file))
+
+        # Rename fitspatrick to fitzpatrick for consistency with other datasets
+        if "fitspatrick" in self.meta_data.columns:
+            self.meta_data = self.meta_data.rename(
+                columns={"fitspatrick": "fitzpatrick"}
+            )
+
         class_mapper = {
             "BCC": "Basal Cell Carcinoma",
             "SCC": "Squamous Cell Carcinoma",
             "ACK": "Actinic Keratosis",
             "SEK": "Seborrheic Keratosis",
-            "BOD": "Bowen’s disease",
+            "BOD": "Bowen's disease",
             "MEL": "Melanoma",
             "NEV": "Nevus",
         }
@@ -83,9 +90,9 @@ class PADUFES20Dataset(BaseDataset):
             if pd.notna(row["gender"]):
                 parts.append(f"for a {row['gender'].lower()} patient")
 
-            if pd.notna(row["fitspatrick"]):
+            if pd.notna(row["fitzpatrick"]):
                 try:
-                    fitzpatrick_int = int(row["fitspatrick"])
+                    fitzpatrick_int = int(row["fitzpatrick"])
                     parts.append(f"with fitzpatrick skin type {fitzpatrick_int}")
                 except (ValueError, TypeError):
                     pass

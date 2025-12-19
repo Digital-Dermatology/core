@@ -70,6 +70,10 @@ class DDIDataset(BaseDataset):
         self.meta_data["path"] = self.meta_data[self.IMG_COL].map(imageid_path_dict.get)
         self.meta_data["malignant"] = self.meta_data["malignant"].astype(str)
 
+        # Rename skin_tone to fitzpatrick for consistency with other datasets
+        if "skin_tone" in self.meta_data.columns:
+            self.meta_data = self.meta_data.rename(columns={"skin_tone": "fitzpatrick"})
+
         self.meta_data[DDILabel.DISEASE.value[0]] = pd.factorize(
             self.meta_data[DDILabel.DISEASE.value[1]]
         )[0]
@@ -79,20 +83,20 @@ class DDIDataset(BaseDataset):
 
         def create_description(row):
             disease = row["disease"]
-            skin_tone = row["skin_tone"]
+            fitzpatrick = row["fitzpatrick"]
 
-            if pd.notna(skin_tone):
+            if pd.notna(fitzpatrick):
                 try:
-                    skin_tone_str = str(skin_tone).split(".")[
+                    fitzpatrick_str = str(fitzpatrick).split(".")[
                         0
                     ]  # Handle floats like 34.0 -> "34"
-                    # Validate that skin_tone_str contains only digits
-                    if skin_tone_str.isdigit():
-                        if len(skin_tone_str) >= 2:
-                            skin_type_text = f"with fitzpatrick skin type {skin_tone_str[0]} or {skin_tone_str[1]}"
+                    # Validate that fitzpatrick_str contains only digits
+                    if fitzpatrick_str.isdigit():
+                        if len(fitzpatrick_str) >= 2:
+                            skin_type_text = f"with fitzpatrick skin type {fitzpatrick_str[0]} or {fitzpatrick_str[1]}"
                         else:
                             skin_type_text = (
-                                f"with fitzpatrick skin type {skin_tone_str}"
+                                f"with fitzpatrick skin type {fitzpatrick_str}"
                             )
                     else:
                         skin_type_text = ""

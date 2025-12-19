@@ -18,6 +18,7 @@ from ...src.datasets.downstream_tasks.ddi_dataset import DDIDataset
 from ...src.datasets.downstream_tasks.derm1m_dataset import Derm1MDataset
 from ...src.datasets.downstream_tasks.derm7pt_dataset import Derm7ptDataset
 from ...src.datasets.downstream_tasks.derma_compass_dataset import DermaCompassDataset
+from ...src.datasets.downstream_tasks.dermacon_in_dataset import DermaConINDataset
 from ...src.datasets.downstream_tasks.dermnet_csv_dataset import DermNetCSVDataset
 from ...src.datasets.downstream_tasks.fitzpatrick17_dataset import Fitzpatrick17kDataset
 from ...src.datasets.downstream_tasks.food101_dataset import Food101Dataset
@@ -61,6 +62,7 @@ class DatasetName(Enum):
     ISIC_2024 = "ISIC_2024"
     PASSION = "PASSION"
     DERMACOMPASS = "DermaCompass"
+    DERMACON_IN = "DermaCon-IN"
     SKINCAP = "SkinCap"
     SCIN = "SCIN"
     ISIC = "ISIC"
@@ -166,6 +168,16 @@ def get_dataset(
         dataset = DermaCompassDataset(
             csv_path,
             dataset_path,
+            transform=transform,
+            return_path=True,
+            **kwargs,
+        )
+    elif dataset_name == DatasetName.DERMACON_IN:
+        csv_path = dataset_path / "DermaCon-IN/METADATA/Skin_Metadata.csv"
+        root_path = dataset_path / "DermaCon-IN/DATASET"
+        dataset = DermaConINDataset(
+            csv_path,
+            root_path,
             transform=transform,
             return_path=True,
             **kwargs,
