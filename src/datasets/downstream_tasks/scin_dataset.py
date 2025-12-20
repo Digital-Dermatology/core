@@ -126,9 +126,42 @@ class SCINDataset(BaseDataset):
         self.meta_data["description"] = self.meta_data.apply(
             lambda row: _generate_description(row), axis=1
         )
+
+        # Extract condition from weighted differential diagnosis
+        # SCIN doesn't have single labels, but has weighted differentials
+        def extract_top_condition(row):
+            """Extract the top condition from weighted differential, or use single label if available."""
+            import ast
+
+            # First check if single label exists
+            single_label = row.get("dermatologist_skin_condition_label_name")
+            if pd.notna(single_label) and str(single_label).lower() not in [
+                "none",
+                "nan",
+            ]:
+                return single_label
+
+            # Otherwise extract from weighted differential
+            weighted = row.get("weighted_skin_condition_label")
+            if pd.notna(weighted):
+                # Handle both dict and string representations
+                if isinstance(weighted, str):
+                    try:
+                        weighted = ast.literal_eval(weighted)
+                    except (ValueError, SyntaxError):
+                        return None
+
+                if isinstance(weighted, dict) and len(weighted) > 0:
+                    # Return the condition with highest probability
+                    return max(weighted.items(), key=lambda x: x[1])[0]
+            return None
+
+        self.meta_data["condition"] = self.meta_data.apply(
+            extract_top_condition, axis=1
+        )
+
         self.meta_data = self.meta_data.rename(
             columns={
-                "dermatologist_skin_condition_label_name": "condition",
                 "sex_at_birth": "gender",
                 "age_group": "age",
                 "fitzpatrick_skin_type": "fitzpatrick",

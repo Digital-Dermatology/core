@@ -77,24 +77,34 @@ class DermaConINDataset(BaseDataset):
         self.meta_data["img_path"] = self.meta_data[self.IMG_COL].apply(find_image_path)
 
         # Standardize column names for compatibility
-        self.meta_data = self.meta_data.rename(columns={
-            "Sex": "gender",
-            "Age": "age",
-            "Fitzpatrick": "fitzpatrick",
-            "Body_part": "body_location",
-            "Disease_label": "condition",
-            "Subject_ID": "subject_id",
-        })
+        self.meta_data = self.meta_data.rename(
+            columns={
+                "Sex": "gender",
+                "Age": "age",
+                "Fitzpatrick": "fitzpatrick",
+                "Body_part": "body_location",
+                "Disease_label": "condition",
+                "Subject_ID": "subject_id",
+            }
+        )
 
         # Clean up fitzpatrick column (remove "FST " prefix)
         if "fitzpatrick" in self.meta_data.columns:
-            self.meta_data["fitzpatrick"] = self.meta_data["fitzpatrick"].str.replace("FST ", "").str.strip()
-            self.meta_data["fitzpatrick"] = pd.to_numeric(self.meta_data["fitzpatrick"], errors="coerce")
+            self.meta_data["fitzpatrick"] = (
+                self.meta_data["fitzpatrick"].str.replace("FST ", "").str.strip()
+            )
+            self.meta_data["fitzpatrick"] = pd.to_numeric(
+                self.meta_data["fitzpatrick"], errors="coerce"
+            )
 
         # Clean up Monk skin tone column
         if "Monk_skin_tone" in self.meta_data.columns:
-            self.meta_data["monk_skin_tone"] = self.meta_data["Monk_skin_tone"].str.replace("MST ", "").str.strip()
-            self.meta_data["monk_skin_tone"] = pd.to_numeric(self.meta_data["monk_skin_tone"], errors="coerce")
+            self.meta_data["monk_skin_tone"] = (
+                self.meta_data["Monk_skin_tone"].str.replace("MST ", "").str.strip()
+            )
+            self.meta_data["monk_skin_tone"] = pd.to_numeric(
+                self.meta_data["monk_skin_tone"], errors="coerce"
+            )
 
         # Parse age ranges to median values
         def parse_age(age_str):
@@ -125,8 +135,10 @@ class DermaConINDataset(BaseDataset):
         # Encode the label column
         label_col_name = label_col.value
         int_lbl, lbl_mapping = pd.factorize(self.meta_data[label_col_name])
-        self.meta_data[label_col_name + "_name"] = self.meta_data[label_col_name]
-        self.meta_data[label_col_name] = int_lbl
+        # Keep original string values in the condition column for descriptions and metadata
+        # Save integer codes to a separate column for use as labels
+        self.meta_data[label_col_name + "_encoded"] = int_lbl
+        # condition column retains string values
 
         # Add dataset description
         self.meta_data["dataset_desc"] = "DermaCon-IN"
