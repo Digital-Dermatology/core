@@ -19,7 +19,7 @@ class DermaConINLabel(Enum):
 class DermaConINDataset(BaseDataset):
     """DermaCon-IN dataset - A dermatology dataset from India."""
 
-    IMG_COL = "Image_name"
+    IMG_COL = "img_path"  # Full path to image (set after finding in DATASET_0/DATASET_1)
     LBL_COL = "Disease_label"
 
     def __init__(
@@ -69,12 +69,13 @@ class DermaConINDataset(BaseDataset):
             for subfolder in ["DATASET_0", "DATASET_1"]:
                 full_path = os.path.join(self.root_dir, subfolder, image_name)
                 if os.path.exists(full_path):
-                    return os.path.join(subfolder, image_name)
+                    return full_path
             # Return default path if not found (will raise error on load)
-            return os.path.join("DATASET_0", image_name)
+            return os.path.join(self.root_dir, "DATASET_0", image_name)
 
-        # Add full relative path column
-        self.meta_data["img_path"] = self.meta_data[self.IMG_COL].apply(find_image_path)
+        # Add full path column (consistent with other datasets like HAM10000)
+        # Source column name in the CSV is "Image_name", we create "img_path" with full paths
+        self.meta_data["img_path"] = self.meta_data["Image_name"].apply(find_image_path)
 
         # Standardize column names for compatibility
         self.meta_data = self.meta_data.rename(
@@ -201,8 +202,7 @@ class DermaConINDataset(BaseDataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        img_path = self.meta_data.loc[self.meta_data.index[idx], "img_path"]
-        img_name = os.path.join(self.root_dir, img_path)
+        img_name = self.meta_data.loc[self.meta_data.index[idx], "img_path"]
         diagnosis = self.meta_data.loc[self.meta_data.index[idx], self.LBL_COL]
 
         if self.return_embedding:
