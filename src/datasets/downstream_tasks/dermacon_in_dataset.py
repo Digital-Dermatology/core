@@ -19,7 +19,9 @@ class DermaConINLabel(Enum):
 class DermaConINDataset(BaseDataset):
     """DermaCon-IN dataset - A dermatology dataset from India."""
 
-    IMG_COL = "img_path"  # Full path to image (set after finding in DATASET_0/DATASET_1)
+    IMG_COL = (
+        "img_path"  # Full path to image (set after finding in DATASET_0/DATASET_1)
+    )
     LBL_COL = "Disease_label"
 
     def __init__(
