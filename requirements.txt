@@ -7,7 +7,8 @@ scikit_learn
 swifter==1.0.9
 wandb
 pytest
-umap-learn
+umap-learn>=0.5.7,<0.6
+pynndescent>=0.5.13,<0.6
 plotly
 mapply
 torch
