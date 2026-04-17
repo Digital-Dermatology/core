@@ -17,6 +17,42 @@ from torchvision.transforms import InterpolationMode
 from turbojpeg import TurboJPEG
 
 
+def _safe_tokenize(tokenizer, texts):
+    """Tokenize with padding + truncation, works for any HF tokenizer.
+
+    Some tokenizers (e.g. SigLIP) don't produce attention_mask, which
+    breaks padding="longest". Fall back to manual padding if needed.
+    """
+    max_len = getattr(tokenizer, "model_max_length", 512)
+    if max_len > 10000:
+        max_len = 512  # some tokenizers report absurdly large defaults
+    try:
+        tokens = tokenizer(
+            texts, padding="longest", truncation=True,
+            max_length=max_len, return_tensors="pt",
+        )
+        if "attention_mask" not in tokens:
+            pad_id = tokenizer.pad_token_id or 0
+            tokens["attention_mask"] = (tokens["input_ids"] != pad_id).long()
+        return tokens
+    except (ValueError, TypeError):
+        # Manual fallback: tokenize without padding, then pad ourselves
+        encoded = tokenizer(texts, truncation=True, max_length=max_len)
+        ids_list = encoded["input_ids"]
+        longest = max(len(ids) for ids in ids_list)
+        pad_id = tokenizer.pad_token_id or 0
+        input_ids = []
+        attention_mask = []
+        for ids in ids_list:
+            pad_len = longest - len(ids)
+            input_ids.append(ids + [pad_id] * pad_len)
+            attention_mask.append([1] * len(ids) + [0] * pad_len)
+        return {
+            "input_ids": torch.tensor(input_ids),
+            "attention_mask": torch.tensor(attention_mask),
+        }
+
+
 class LoadingType(Enum):
     STANDARD = 0
     IMG_ONLY = 1
@@ -78,19 +114,9 @@ class CocoCaptionDataset(Dataset):
 
     def apply_tokenizer(self) -> None:
         if self.tokenizer:
-            self.tokens = self.tokenizer(
-                list(self.df["captions"].values),
-                padding="longest",
-                truncation=True,
-                return_tensors="pt",
+            self.tokens = _safe_tokenize(
+                self.tokenizer, list(self.df["captions"].values)
             )
-            # Some tokenizers (SigLIP) don't return attention_mask.
-            # Generate it from pad_token_id if missing.
-            if "attention_mask" not in self.tokens:
-                pad_id = self.tokenizer.pad_token_id or 0
-                self.tokens["attention_mask"] = (
-                    self.tokens["input_ids"] != pad_id
-                ).long()
 
     def __len__(self):
         return len(self.df)

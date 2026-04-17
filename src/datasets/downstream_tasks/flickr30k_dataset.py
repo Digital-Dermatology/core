@@ -65,17 +65,10 @@ class Flickr30kDataset(Dataset):
 
     def apply_tokenizer(self) -> None:
         if self.tokenizer:
-            self.tokens = self.tokenizer(
-                list(self.df["comment"].values),
-                padding="longest",
-                truncation=True,
-                return_tensors="pt",
+            from src.core.src.datasets.downstream_tasks.coco_dataset import _safe_tokenize
+            self.tokens = _safe_tokenize(
+                self.tokenizer, list(self.df["comment"].values)
             )
-            if "attention_mask" not in self.tokens:
-                pad_id = self.tokenizer.pad_token_id or 0
-                self.tokens["attention_mask"] = (
-                    self.tokens["input_ids"] != pad_id
-                ).long()
 
     def __len__(self):
         return len(self.df)
