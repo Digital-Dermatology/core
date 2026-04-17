@@ -1,3 +1,4 @@
+import inspect
 import random
 import string
 from typing import List, Tuple, Union
@@ -78,12 +79,13 @@ class ImageTextDataset(Dataset):
     def __getitem__(self, index: int) -> Tuple[Image.Image, Union[str, dict]]:
         image, label = self.dataset.__getitem__(index=index)
         if self.tokenizer:
-            caption = {k: v[index] for (k, v) in self.tokens.items()}
+            if type(self.tokens) is torch.Tensor:
+                caption = self.tokens[index]
+            else:
+                caption = {k: v[index] for (k, v) in self.tokens.items()}
             return image, caption
         else:
             label = self.dataset.classes[label]
-            if "," in label:
-                label = random.choice(label.split(",")).strip()
             template = random.choice(self.label_templates)
             label_text = template.format(**{self.template_key: label}).lower().strip()
             return image, label_text

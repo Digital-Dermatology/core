@@ -11,7 +11,6 @@ import scipy
 import seaborn as sns
 import torch
 import torch.nn.functional as F
-import umap
 from loguru import logger
 from matplotlib.gridspec import SubplotSpec
 from sklearn.metrics import auc
@@ -364,7 +363,7 @@ def calculate_scores_from_ranking(
         l_recall_gain = (l_tpr - pi) / ((1 - pi) * l_tpr)
         l_recall_gain = l_recall_gain.clip(min=0, max=1)
 
-    for k in [1, 5, 10, 20]:
+    for k in [1, 5, 10, 20, 50, 100, 500, 1000]:
         log_dict[f"{wandb_cat}evaluation/Recall@{k}"] = l_tpr[k - 1]
         log_dict[f"{wandb_cat}evaluation/Precision@{k}"] = l_precision[k - 1]
         if show_scores:
@@ -632,6 +631,8 @@ def embedding_plot(
 
     if X.shape[0] > 2:
         # apply if the dimension is larger than 2
+        import umap
+
         umap_transformer = umap.UMAP(
             n_components=2, n_neighbors=100, random_state=42, n_jobs=1
         )
@@ -721,6 +722,8 @@ def embedding_plot_w_markers(
 
     if X.shape[0] > 2:
         # apply if the dimension is larger than 2
+        import umap
+
         if text_X is not None:
             X = np.concatenate([text_X, X])
         umap_transformer = umap.UMAP(
