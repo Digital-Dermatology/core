@@ -62,8 +62,12 @@ class ImageTextDataset(Dataset):
                 padding="longest",
                 truncation=True,
                 return_tensors="pt",
-                return_attention_mask=True,
             )
+            if "attention_mask" not in self.tokens:
+                pad_id = self.tokenizer.pad_token_id or 0
+                self.tokens["attention_mask"] = (
+                    self.tokens["input_ids"] != pad_id
+                ).long()
 
     @property
     def transform(self):
