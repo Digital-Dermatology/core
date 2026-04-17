@@ -21,11 +21,11 @@ def _safe_tokenize(tokenizer, texts):
     """Tokenize with padding + truncation, works for any HF tokenizer.
 
     Some tokenizers (e.g. SigLIP) don't produce attention_mask, which
-    breaks padding="longest". Fall back to manual padding if needed.
+    breaks HF's internal padding. Falls back to per-text encode + manual pad.
     """
     max_len = getattr(tokenizer, "model_max_length", 512)
     if max_len > 10000:
-        max_len = 512  # some tokenizers report absurdly large defaults
+        max_len = 512
     try:
         tokens = tokenizer(
             texts, padding="longest", truncation=True,
@@ -36,14 +36,18 @@ def _safe_tokenize(tokenizer, texts):
             tokens["attention_mask"] = (tokens["input_ids"] != pad_id).long()
         return tokens
     except (ValueError, TypeError):
-        # Manual fallback: tokenize without padding, then pad ourselves
-        encoded = tokenizer(texts, truncation=True, max_length=max_len)
-        ids_list = encoded["input_ids"]
-        longest = max(len(ids) for ids in ids_list)
+        # Fallback: encode each text individually, then pad manually.
+        # Uses tokenizer.encode() which returns plain int lists —
+        # bypasses all BatchEncoding / padding machinery.
         pad_id = tokenizer.pad_token_id or 0
+        all_ids = []
+        for text in texts:
+            ids = tokenizer.encode(text, truncation=True, max_length=max_len)
+            all_ids.append(ids)
+        longest = max(len(ids) for ids in all_ids)
         input_ids = []
         attention_mask = []
-        for ids in ids_list:
+        for ids in all_ids:
             pad_len = longest - len(ids)
             input_ids.append(ids + [pad_id] * pad_len)
             attention_mask.append([1] * len(ids) + [0] * pad_len)
