@@ -57,7 +57,9 @@ class CocoCaptionDataset(Dataset):
             self.tokens = self.tokenizer(
                 list(self.df["captions"].values),
                 padding="longest",
+                truncation=True,
                 return_tensors="pt",
+                return_attention_mask=True,
             )
 
     def __len__(self):

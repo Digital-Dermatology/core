@@ -63,7 +63,9 @@ class Flickr30kDataset(Dataset):
             self.tokens = self.tokenizer(
                 list(self.df["comment"].values),
                 padding="longest",
+                truncation=True,
                 return_tensors="pt",
+                return_attention_mask=True,
             )
 
     def __len__(self):
