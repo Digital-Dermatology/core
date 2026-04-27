@@ -50,6 +50,12 @@ class Trainer(ABC, object):
         self.start_epoch = 1
         self.multi_gpu = False
         self.dist_training = is_dist_avail_and_initialized()
+        # `self.local_rank` is referenced unconditionally by `distribute_model`
+        # (DDP `device_ids=[self.local_rank]`) when distributed training is active,
+        # so it must be defined regardless of whether wandb_logging is enabled.
+        # `init_distributed_mode` sets `LOCAL_RANK` in the env (including the
+        # single-GPU path), so this read is safe.
+        self.local_rank = int(os.environ.get("LOCAL_RANK", 0))
 
         self.wandb_logging = wandb_logging
         if self.wandb_logging:
@@ -63,7 +69,6 @@ class Trainer(ABC, object):
                 )
 
                 if self.dist_training:
-                    self.local_rank = int(os.environ["LOCAL_RANK"])
                     run_name = f"{arch_name}-{additional_run_info}-{wandb.run.name}-rank-{self.local_rank}"
                 else:
                     run_name = f"{arch_name}-{additional_run_info}-{wandb.run.name}"
