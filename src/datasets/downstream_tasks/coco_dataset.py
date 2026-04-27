@@ -17,6 +17,46 @@ from torchvision.transforms import InterpolationMode
 from turbojpeg import TurboJPEG
 
 
+def _safe_tokenize(tokenizer, texts):
+    """Tokenize with padding + truncation, works for any HF tokenizer.
+
+    Some tokenizers (e.g. SigLIP) don't produce attention_mask, which
+    breaks HF's internal padding. Falls back to per-text encode + manual pad.
+    """
+    max_len = getattr(tokenizer, "model_max_length", 512)
+    if max_len > 10000:
+        max_len = 512
+    try:
+        tokens = tokenizer(
+            texts, padding="longest", truncation=True,
+            max_length=max_len, return_tensors="pt",
+        )
+        if "attention_mask" not in tokens:
+            pad_id = tokenizer.pad_token_id or 0
+            tokens["attention_mask"] = (tokens["input_ids"] != pad_id).long()
+        return tokens
+    except (ValueError, TypeError):
+        # Fallback: encode each text individually, then pad manually.
+        # Uses tokenizer.encode() which returns plain int lists —
+        # bypasses all BatchEncoding / padding machinery.
+        pad_id = tokenizer.pad_token_id or 0
+        all_ids = []
+        for text in texts:
+            ids = tokenizer.encode(text, truncation=True, max_length=max_len)
+            all_ids.append(ids)
+        longest = max(len(ids) for ids in all_ids)
+        input_ids = []
+        attention_mask = []
+        for ids in all_ids:
+            pad_len = longest - len(ids)
+            input_ids.append(ids + [pad_id] * pad_len)
+            attention_mask.append([1] * len(ids) + [0] * pad_len)
+        return {
+            "input_ids": torch.tensor(input_ids),
+            "attention_mask": torch.tensor(attention_mask),
+        }
+
+
 class LoadingType(Enum):
     STANDARD = 0
     IMG_ONLY = 1
@@ -78,15 +118,9 @@ class CocoCaptionDataset(Dataset):
 
     def apply_tokenizer(self) -> None:
         if self.tokenizer:
-            arguments = inspect.getfullargspec(self.tokenizer).args
-            if "padding" in arguments and "return_tensors" in arguments:
-                self.tokens = self.tokenizer(
-                    list(self.df["captions"].values),
-                    padding="longest",
-                    return_tensors="pt",
-                )
-            else:
-                self.tokens = self.tokenizer(list(self.df["captions"].values))
+            self.tokens = _safe_tokenize(
+                self.tokenizer, list(self.df["captions"].values)
+            )
 
     def __len__(self):
         return len(self.df)

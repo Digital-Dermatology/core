@@ -57,15 +57,10 @@ class ImageTextDataset(Dataset):
 
     def apply_tokenizer(self) -> None:
         if self.tokenizer:
-            arguments = inspect.getfullargspec(self.tokenizer).args
-            if "padding" in arguments and "return_tensors" in arguments:
-                self.tokens = self.tokenizer(
-                    list(self.df["captions"].values),
-                    padding="longest",
-                    return_tensors="pt",
-                )
-            else:
-                self.tokens = self.tokenizer(list(self.df["captions"].values))
+            from src.core.src.datasets.downstream_tasks.coco_dataset import _safe_tokenize
+            self.tokens = _safe_tokenize(
+                self.tokenizer, list(self.df["captions"].values)
+            )
 
     @property
     def transform(self):
