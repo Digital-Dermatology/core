@@ -88,7 +88,7 @@ class PASSIONDataset(GenericImageDataset):
         passion_meta_data = pd.read_csv(meta_data_file, index_col=0)
         self.LBL_COL = self.LBL_COL.replace("lbl_", "")
         self.meta_data = self.meta_data.drop(
-            columns=[self.LBL_COL, f"lbl_{self.LBL_COL}"], axis=1
+            columns=[self.LBL_COL, f"lbl_{self.LBL_COL}"]
         ).merge(passion_meta_data, on=["subject_id"], how="inner")
         # fill the `impetig` column
         impetigo_mapper = {0.0: "not impetiginized", 1.0: "impetiginized"}
