@@ -8,6 +8,7 @@ from torchvision.datasets import CIFAR10
 
 from ...src.datasets.base_dataset import BaseDataset
 from ...src.datasets.downstream_tasks.altmeyers_dataset import AltmeyersDataset
+from ...src.datasets.downstream_tasks.bald_dataset import BALDDataset
 from ...src.datasets.downstream_tasks.celeba_dataset import CelebADataset
 from ...src.datasets.downstream_tasks.chest_xray_covid_dataset import (
     ChestXrayCovidDataset,
@@ -15,6 +16,7 @@ from ...src.datasets.downstream_tasks.chest_xray_covid_dataset import (
 from ...src.datasets.downstream_tasks.chexpert_dataset import CheXpertDataset
 from ...src.datasets.downstream_tasks.daffodil_dataset import DaffodilDataset
 from ...src.datasets.downstream_tasks.ddi_dataset import DDIDataset
+from ...src.datasets.downstream_tasks.derm12345_dataset import Derm12345Dataset
 from ...src.datasets.downstream_tasks.derm1m_dataset import Derm1MDataset
 from ...src.datasets.downstream_tasks.derm7pt_dataset import Derm7ptDataset
 from ...src.datasets.downstream_tasks.derma_compass_dataset import DermaCompassDataset
@@ -30,6 +32,8 @@ from ...src.datasets.downstream_tasks.isic_2024_dataset import ISIC2024Dataset
 from ...src.datasets.downstream_tasks.isic_dataset import ISICDataset
 from ...src.datasets.downstream_tasks.lesion130k_dataset import LESION130kDataset
 from ...src.datasets.downstream_tasks.med_node_dataset import MedNodeDataset
+from ...src.datasets.downstream_tasks.midas_dataset import MIDASDataset
+from ...src.datasets.downstream_tasks.milk10k_dataset import MILK10kDataset
 from ...src.datasets.downstream_tasks.mm_skinqa_dataset import MMSkinQADataset
 from ...src.datasets.downstream_tasks.mskcc_dataset import MSKCCDataset
 from ...src.datasets.downstream_tasks.oxford_flowers102_dataset import (
@@ -75,6 +79,10 @@ class DatasetName(Enum):
     HIBA = "HIBA"
     MSKCC = "MSKCC"
     DERMNET_CSV = "DermNet-CSV"
+    MILK10K = "MILK10k"
+    BALD = "BALD"
+    DERM12345 = "DERM12345"
+    MIDAS = "MIDAS"
 
     CHEXPERT = "CheXpert"
     CHEST_XRAY_COVID = "Chest_Xray_COVID"
@@ -285,6 +293,38 @@ def get_dataset(
     elif dataset_name == DatasetName.DERMNET_CSV:
         dataset_path = dataset_path / "Dermnet/"
         dataset = DermNetCSVDataset(
+            dataset_dir=dataset_path,
+            transform=transform,
+            return_path=True,
+            **kwargs,
+        )
+    elif dataset_name == DatasetName.MILK10K:
+        dataset_path = dataset_path / "MILK10k/"
+        dataset = MILK10kDataset(
+            dataset_dir=dataset_path,
+            transform=transform,
+            return_path=True,
+            **kwargs,
+        )
+    elif dataset_name == DatasetName.BALD:
+        dataset_path = dataset_path / "BALD/"
+        dataset = BALDDataset(
+            dataset_dir=dataset_path,
+            transform=transform,
+            return_path=True,
+            **kwargs,
+        )
+    elif dataset_name == DatasetName.DERM12345:
+        dataset_path = dataset_path / "DERM12345/"
+        dataset = Derm12345Dataset(
+            dataset_dir=dataset_path,
+            transform=transform,
+            return_path=True,
+            **kwargs,
+        )
+    elif dataset_name == DatasetName.MIDAS:
+        dataset_path = dataset_path / "MIDAS/"
+        dataset = MIDASDataset(
             dataset_dir=dataset_path,
             transform=transform,
             return_path=True,
