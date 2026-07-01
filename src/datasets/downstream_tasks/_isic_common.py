@@ -81,4 +81,11 @@ def normalize_isic_metadata(
                 lambda r: _combine_nonempty(r, site_cols), axis=1
             )
 
+    # The modern ISIC export carries real skin tone as ``fitzpatrick_skin_type``
+    # (roman I..VI); expose it under SkinMap's flat ``fitzpatrick`` column so the
+    # loader/prep pick it up (``harmonize_fitzpatrick`` maps I..VI -> 1..6).
+    # Without this, every ISIC-loaded dataset silently loses its real FST.
+    if "fitzpatrick" not in meta.columns and "fitzpatrick_skin_type" in meta.columns:
+        meta["fitzpatrick"] = meta["fitzpatrick_skin_type"]
+
     return meta
