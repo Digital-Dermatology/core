@@ -64,6 +64,10 @@ class PADUFES20Dataset(BaseDataset):
             self.meta_data = self.meta_data.rename(
                 columns={"fitspatrick": "fitzpatrick"}
             )
+        # `region` carries the body site (ARM, FACE, HAND, ...) -> map it so the
+        # atlas gets a real body_region instead of dropping it.
+        if "region" in self.meta_data.columns:
+            self.meta_data["body_location"] = self.meta_data["region"]
 
         class_mapper = {
             "BCC": "Basal Cell Carcinoma",

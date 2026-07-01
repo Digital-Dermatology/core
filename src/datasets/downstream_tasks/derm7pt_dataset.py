@@ -62,11 +62,13 @@ class Derm7ptDataset(GenericImageDataset):
             lambda x: re.sub(r"\(.*\)", "", x).strip()
         )
         df_meta["lbl_diagnosis"] = pd.factorize(df_meta["diagnosis"])[0]
-        df_meta = df_meta[["clinic", "derm", "diagnosis", "lbl_diagnosis"]]
+        # Carry real demographics/site through (dropped before -> lost in atlas).
+        _extra = [c for c in ("location", "sex") if c in df_meta.columns]
+        df_meta = df_meta[["clinic", "derm", "diagnosis", "lbl_diagnosis"] + _extra]
 
-        _df_clinic = pd.DataFrame(df_meta[["clinic", "diagnosis", "lbl_diagnosis"]])
+        _df_clinic = pd.DataFrame(df_meta[["clinic", "diagnosis", "lbl_diagnosis"] + _extra])
         _df_clinic.rename(columns={"clinic": "img_path"}, inplace=True)
-        _df_derm = pd.DataFrame(df_meta[["derm", "diagnosis", "lbl_diagnosis"]])
+        _df_derm = pd.DataFrame(df_meta[["derm", "diagnosis", "lbl_diagnosis"] + _extra])
         _df_derm.rename(columns={"derm": "img_path"}, inplace=True)
 
         df_meta = pd.concat([_df_clinic, _df_derm])
@@ -84,6 +86,8 @@ class Derm7ptDataset(GenericImageDataset):
         self.meta_data = self.meta_data.rename(
             columns={
                 "diagnosis": "condition",
+                "location": "body_location",
+                "sex": "gender",
             },
         )
 

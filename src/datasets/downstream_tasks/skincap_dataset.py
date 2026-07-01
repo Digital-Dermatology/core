@@ -61,12 +61,23 @@ class SkinCapDataset(BaseDataset):
         self.meta_data["path"] = self.meta_data[self.IMG_COL].map(imageid_path_dict.get)
 
         self.meta_data["description"] = self.meta_data["caption_zh_polish_en"]
-        self.meta_data = self.meta_data.rename(
-            columns={
-                "disease": "condition",
-                "skin_tone": "fitzpatrick",
-            },
-        )
+        # Prefer the true Fitzpatrick I-VI scale (fitzpatrick_scale, ~81% coverage)
+        # over the sparse/coarse skin_tone column (~16%). harmonize_fitzpatrick maps
+        # both downstream; only fall back to skin_tone when the scale is absent.
+        if "fitzpatrick_scale" in self.meta_data.columns:
+            self.meta_data["fitzpatrick"] = self.meta_data["fitzpatrick_scale"]
+            if "skin_tone" in self.meta_data.columns:
+                self.meta_data["fitzpatrick"] = self.meta_data["fitzpatrick"].fillna(
+                    self.meta_data["skin_tone"]
+                )
+            self.meta_data = self.meta_data.rename(columns={"disease": "condition"})
+        else:
+            self.meta_data = self.meta_data.rename(
+                columns={
+                    "disease": "condition",
+                    "skin_tone": "fitzpatrick",
+                },
+            )
 
         # global configs
         self.return_path = return_path

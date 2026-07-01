@@ -160,6 +160,11 @@ class SCINDataset(BaseDataset):
             extract_top_condition, axis=1
         )
 
+        # Collapse the one-hot body_parts_* flags into a real body_location
+        # (was only used in the free-text description, never mapped -> dropped).
+        self.meta_data["body_location"] = self.meta_data.apply(
+            lambda row: _join_flags(row, "body_parts_"), axis=1
+        ).replace("none", pd.NA)
         self.meta_data = self.meta_data.rename(
             columns={
                 "sex_at_birth": "gender",
