@@ -66,10 +66,18 @@ class Derm7ptDataset(GenericImageDataset):
         _extra = [c for c in ("location", "sex") if c in df_meta.columns]
         df_meta = df_meta[["clinic", "derm", "diagnosis", "lbl_diagnosis"] + _extra]
 
-        _df_clinic = pd.DataFrame(df_meta[["clinic", "diagnosis", "lbl_diagnosis"] + _extra])
+        # Derm7pt photographs every lesion twice, once as a clinical close-up and
+        # once through a dermatoscope. Stacking the two columns without recording
+        # which was which labels the whole archive dermoscopy and loses the pair,
+        # so tag the modality per image and keep the row as the lesion key.
+        df_meta["lesion_id"] = [f"derm7pt_{i}" for i in range(len(df_meta))]
+        _keep = ["diagnosis", "lbl_diagnosis", "lesion_id"] + _extra
+        _df_clinic = pd.DataFrame(df_meta[["clinic"] + _keep])
         _df_clinic.rename(columns={"clinic": "img_path"}, inplace=True)
-        _df_derm = pd.DataFrame(df_meta[["derm", "diagnosis", "lbl_diagnosis"] + _extra])
+        _df_clinic["modality"] = "clinical"
+        _df_derm = pd.DataFrame(df_meta[["derm"] + _keep])
         _df_derm.rename(columns={"derm": "img_path"}, inplace=True)
+        _df_derm["modality"] = "dermoscopy"
 
         df_meta = pd.concat([_df_clinic, _df_derm])
         df_meta["img_path"] = df_meta["img_path"].apply(
@@ -80,7 +88,10 @@ class Derm7ptDataset(GenericImageDataset):
         self.meta_data = df_meta
 
         self.meta_data["description"] = self.meta_data.apply(
-            lambda row: f"This dermoscopic image shows a {row['diagnosis']}.",
+            lambda row: (
+                f"This {'dermoscopic' if row['modality'] == 'dermoscopy' else 'clinical'} "
+                f"image shows a {row['diagnosis']}."
+            ),
             axis=1,
         )
         self.meta_data = self.meta_data.rename(
