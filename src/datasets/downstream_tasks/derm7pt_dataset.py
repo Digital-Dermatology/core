@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional, Sequence, Union
 
 import pandas as pd
+from loguru import logger
 
 from ....src.datasets.generic_image_dataset import GenericImageDataset
 
@@ -80,6 +81,19 @@ class Derm7ptDataset(GenericImageDataset):
         _df_derm["modality"] = "dermoscopy"
 
         df_meta = pd.concat([_df_clinic, _df_derm])
+
+        # Nine files are listed as one lesion's clinical shot and another's
+        # dermoscopic shot. One of the two listings has to be wrong, and which
+        # is not recoverable, so both go rather than putting the same image in
+        # the atlas twice under contradictory modalities.
+        _ambiguous = df_meta["img_path"].duplicated(keep=False)
+        if _ambiguous.any():
+            logger.warning(
+                f"Derm7pt lists {_ambiguous.sum() // 2} files under both modalities; "
+                f"dropping {_ambiguous.sum()} rows rather than guessing"
+            )
+            df_meta = df_meta[~_ambiguous]
+
         df_meta["img_path"] = df_meta["img_path"].apply(
             lambda x: f"{str(dataset_dir)}/{x}"
         )
